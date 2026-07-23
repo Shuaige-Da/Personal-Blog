@@ -1,0 +1,49 @@
+[Unit]
+Description=RainWave Flask application
+After=network-online.target mysql.service
+Wants=network-online.target
+Requires=mysql.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/rainwave-current
+EnvironmentFile=/etc/rainwave/rainwave.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+RuntimeDirectory=rainwave
+RuntimeDirectoryMode=0750
+UMask=0027
+ExecStart=/var/www/rainwave-current/.venv/bin/gunicorn --no-control-socket --workers 2 --threads 2 --worker-class gthread --bind unix:/run/rainwave/gunicorn.sock --umask 007 --timeout 300 --graceful-timeout 30 --keep-alive 5 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile - 'backend.core.app:create_app()'
+ExecReload=/bin/kill -s HUP $MAINPID
+KillSignal=SIGQUIT
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/rainwave-shared/uploads
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+LimitNOFILE=65535
+TasksMax=128
+MemoryHigh=320M
+MemoryMax=384M
+MemorySwapMax=128M
+
+[Install]
+WantedBy=multi-user.target

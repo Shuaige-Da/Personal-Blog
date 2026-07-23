@@ -427,6 +427,8 @@ docs/images/
 
 ## 生产部署
 
+仓库内的 [`deploy/`](deploy/) 目录提供当前生产环境使用的 Systemd、Nginx、SSH、Fail2ban 与 Journald 配置模板。应用配置前应先阅读其中的说明，并始终先验证 SSH 公钥登录和完整备份。
+
 ### Gunicorn
 
 ```bash
