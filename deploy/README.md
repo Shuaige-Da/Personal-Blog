@@ -5,9 +5,10 @@
 - `systemd/rainwave.service`：以 `www-data` 运行 Gunicorn，使用 Unix Socket，并启用 Systemd 沙箱和资源限制。
 - `nginx/rainwave.conf`：提供 HTTPS、静态资源、持久化上传目录和反向代理。
 - `nginx/rainwave-security.conf`：提供共享请求限速、连接数限制和隐藏版本号。
-- `ssh/99-rainwave-hardening.conf`：验证密钥登录后关闭 SSH 密码登录。
+- `ssh/00-rainwave-hardening.conf`：验证密钥登录后优先关闭 SSH 密码登录。
 - `fail2ban/rainwave.local`：保护 SSH 和触发 Nginx 限速的来源地址。
 - `journald/60-rainwave-retention.conf`：限制系统日志磁盘占用。
+- `logrotate/btmp`：压缩并轮转失败登录记录，避免暴力扫描持续占用磁盘。
 
 服务器约定：
 
