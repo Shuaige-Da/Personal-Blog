@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="rw-page rw-section-page rw-post-page" aria-labelledby="post-title">
+    <div class="rw-article-layout">
+        <article class="rw-hologlass rw-article-shell">
+            <header class="rw-article-header">
+                <p class="rw-section-kicker">RainWave writing</p>
+                <h1 id="post-title" class="rw-article-title">{{ post.title }}</h1>
+                <div class="rw-card-meta">
+                    <time datetime="{{ post.created_at.isoformat() }}">{{ post.created_at.strftime('%Y.%m.%d') }}</time>
+                    <span>{{ ((post.content_markdown|length) / 500)|round(0, 'ceil')|int }} 分钟阅读</span>
+                </div>
+                {% if post.tags %}
+                    <div class="rw-tags">
+                        {% for tag in post.tags.split(',') if tag|trim %}
+                            <span class="rw-tag">{{ tag|trim }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </header>
+
+            <div class="article-content" id="article-content" data-article-content>
+                {{ post.content_html | safe }}
+            </div>
+
+            <div class="mt-5 pt-4 border-top border-light border-opacity-10">
+                <a class="rw-text-link" href="{{ url_for('articles') }}">
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                    返回文章列表
+                </a>
+            </div>
+        </article>
+
+        <aside class="rw-hologlass rw-article-toc" aria-label="本页内容" data-article-toc>
+            <h2 class="rw-toc-title">
+                <i class="bi bi-list-ul" aria-hidden="true"></i>
+                本页内容
+            </h2>
+            <ol class="rw-toc-list" data-toc-list></ol>
+            <p class="rw-toc-empty" data-toc-empty hidden>这篇文章没有分节标题。</p>
+
+            {% if post.tags %}
+                <div class="rw-toc-tags">
+                    <span><i class="bi bi-tags" aria-hidden="true"></i> 标签</span>
+                    <div class="rw-tags">
+                        {% for tag in post.tags.split(',') if tag|trim %}
+                            <span class="rw-tag">{{ tag|trim }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </aside>
+    </div>
+</section>
+{% endblock %}

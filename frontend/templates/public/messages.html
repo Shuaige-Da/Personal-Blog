@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="rw-page rw-section-page" aria-labelledby="messages-title">
+    <header class="rw-section-header">
+        <div>
+            <p class="rw-section-kicker">Guestbook · 04</p>
+            <h1 id="messages-title" class="rw-section-title">留下片刻回声</h1>
+        </div>
+        <p class="rw-section-copy">
+            写下一句话。留言经过审核后公开，安静地留在这片夜色里。
+        </p>
+    </header>
+
+    <div class="rw-message-layout">
+        <form class="rw-hologlass rw-message-form" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="rw-honeypot" aria-hidden="true">
+                {{ form.website.label }}
+                {{ form.website(tabindex="-1", autocomplete="off") }}
+            </div>
+            <label class="rw-form-label" for="{{ form.nickname.id }}">昵称</label>
+            {{ form.nickname(class="rw-input", autocomplete="nickname", placeholder="怎么称呼你") }}
+            {% for error in form.nickname.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+
+            <label class="rw-form-label" for="{{ form.content.id }}">留言</label>
+            {{ form.content(class="rw-textarea", placeholder="写下想说的话…") }}
+            {% for error in form.content.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+
+            {% if turnstile_site_key %}
+                <div class="cf-turnstile mt-3" data-sitekey="{{ turnstile_site_key }}"></div>
+            {% endif %}
+            <button class="rw-primary-button mt-3" type="submit">
+                <i class="bi bi-send" aria-hidden="true"></i>
+                提交审核
+            </button>
+        </form>
+
+        <div class="rw-hologlass rw-message-list" aria-label="已公开留言">
+            {% for item in items %}
+                <article class="rw-hologlass rw-message-card">
+                    <div class="rw-card-content">
+                        <div class="rw-card-meta">
+                            <span>{{ item.nickname }}</span>
+                            <time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%Y.%m.%d') }}</time>
+                        </div>
+                        <p class="rw-card-description mt-auto">{{ item.content }}</p>
+                    </div>
+                </article>
+            {% else %}
+                <div class="rw-empty-state">这里还很安静，欢迎留下第一条回声。</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+    {% if turnstile_site_key %}
+        <script nonce="{{ csp_nonce }}" src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {% endif %}
+{% endblock %}

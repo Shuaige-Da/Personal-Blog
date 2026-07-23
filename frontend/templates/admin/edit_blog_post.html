@@ -1,0 +1,410 @@
+{# Blog post editor: split-pane + AI writing assistant. #}
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+    .editor-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        min-height: 600px;
+    }
+
+    @media (max-width: 991px) {
+        .editor-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .editor-pane {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .editor-pane textarea {
+        flex: 1;
+        font-family: "Consolas", "Monaco", "Courier New", monospace;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        resize: none;
+        min-height: 500px;
+    }
+
+    .preview-pane {
+        overflow-y: auto;
+        max-height: 700px;
+    }
+
+    .preview-pane h1, .preview-pane h2, .preview-pane h3 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .preview-pane pre {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem;
+        border-radius: 12px;
+        overflow-x: auto;
+    }
+
+    .preview-pane code {
+        font-family: "Consolas", "Monaco", monospace;
+        font-size: 0.9rem;
+    }
+
+    .preview-pane blockquote {
+        border-left: 3px solid var(--accent);
+        padding-left: 1rem;
+        margin-left: 0;
+        color: var(--text-soft);
+    }
+
+    .preview-pane img {
+        max-width: 100%;
+        border-radius: 12px;
+    }
+
+    .preview-pane table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .preview-pane th, .preview-pane td {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 0.5rem;
+    }
+
+    .ai-assistant-fab {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(141, 231, 213, 0.9), rgba(123, 193, 255, 0.88));
+        border: none;
+        color: #061120;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .ai-assistant-fab:hover {
+        transform: scale(1.1);
+    }
+
+    .ai-panel {
+        position: fixed;
+        bottom: 6rem;
+        right: 2rem;
+        z-index: 1001;
+        width: 320px;
+        max-height: 400px;
+        display: none;
+    }
+
+    .ai-panel.is-open {
+        display: block;
+    }
+
+    .ai-panel-body {
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="glass-card p-4 p-md-5 mb-4">
+    <span class="hero-chip mb-3">
+        <i class="bi bi-{% if post %}pencil{% else %}plus-lg{% endif %}"></i>
+        {% if post %}Edit Post{% else %}New Post{% endif %}
+    </span>
+    <h1 class="display-5 fw-bold mb-3">
+        {% if post %}&#32534;&#36753;: {{ post.title }}{% else %}&#26032;&#24314;&#21338;&#23458;&#25991;&#31456;{% endif %}
+    </h1>
+</section>
+
+<form action="" method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-8">
+            {{ form.title.label(class="form-label") }}
+            {{ form.title(class="form-control", placeholder="&#36755;&#20837;&#25991;&#31456;&#26631;&#39064;") }}
+        </div>
+        <div class="col-md-4">
+            {{ form.slug.label(class="form-label") }}
+            {{ form.slug(class="form-control", placeholder="URL &#21035;&#21517;&#65288;&#30041;&#31354;&#33258;&#21160;&#29983;&#25104;&#65289;") }}
+            <div class="form-text">URL slug for permalink</div>
+        </div>
+    </div>
+
+    {# File import section. #}
+    <div class="glass-card p-3 mb-4">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <i class="bi bi-file-earmark-arrow-up text-info fs-5"></i>
+            <span class="fw-semibold">&#23548;&#20837;&#25991;&#20214;</span>
+            <input type="file" id="import-file-input" accept=".md,.markdown,.txt,.html,.htm" class="form-control form-control-sm" style="max-width: 280px;">
+            <button type="button" class="btn ghost-btn btn-sm" id="import-file-btn">
+                <i class="bi bi-upload me-1"></i>&#23548;&#20837;
+            </button>
+            <span class="small muted-text" id="import-status"></span>
+        </div>
+    </div>
+
+    <div class="glass-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="section-title mb-0"><i class="bi bi-markdown me-2"></i>&#25991;&#31456;&#20869;&#23481;</h4>
+            <span class="small muted-text">Markdown &#25903;&#25345;&#65292;&#21491;&#20391;&#23454;&#26102;&#39044;&#35272;</span>
+        </div>
+        <div class="editor-container">
+            <div class="editor-pane">
+                {{ form.content_markdown(class="form-control", placeholder="Write your article in Markdown here...") }}
+            </div>
+            <div class="glass-card-soft p-4 preview-pane" id="preview-pane">
+                <p class="muted-text text-center">Preview area</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="glass-card p-4 h-100">
+                {{ form.summary.label(class="form-label fw-semibold") }}
+                {{ form.summary(class="form-control", placeholder="&#31616;&#30701;&#25551;&#36848;&#25991;&#31456;&#20869;&#23481;") }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="glass-card p-4 h-100">
+                <div class="mb-3">
+                    {{ form.tags.label(class="form-label fw-semibold") }}
+                    {{ form.tags(class="form-control", placeholder="Flask, Python") }}
+                </div>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        {{ form.cover_image.label(class="form-label") }}
+                        {{ form.cover_image(class="form-control", accept="image/*") }}
+                    </div>
+                    <div class="col-sm-6">
+                        {{ form.is_published.label(class="form-label") }}
+                        {{ form.is_published(class="form-select") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center">
+        <a class="btn ghost-btn" href="{{ url_for('manage_blog') }}">
+            <i class="bi bi-arrow-left me-1"></i>&#36820;&#22238;&#25991;&#31456;&#21015;&#34920;
+        </a>
+        <button type="submit" class="btn login-btn">
+            <i class="bi bi-check-lg me-1"></i>{{ '&#26356;&#26032;&#25991;&#31456;' if post else '&#20445;&#23384;&#25991;&#31456;' }}
+        </button>
+    </div>
+</form>
+
+{# AI assistant FAB and panel. #}
+<button type="button" class="ai-assistant-fab" id="ai-fab" title="AI Writing Assistant">
+    <i class="bi bi-robot"></i>
+</button>
+
+<div class="ai-panel glass-card p-4" id="ai-panel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="section-title mb-0"><i class="bi bi-robot me-2"></i>AI &#20889;&#20316;&#21161;&#25163;</h5>
+        <button type="button" class="btn-close btn-close-white" id="ai-close"></button>
+    </div>
+    <p class="small muted-text mb-3">AI will process the selected text in the editor.</p>
+    <div class="d-grid gap-2 mb-3">
+        <button type="button" class="btn ghost-btn" data-ai-action="polish">
+            <i class="bi bi-magic me-1"></i>&#28070;&#33394;&#20248;&#21270;
+        </button>
+        <button type="button" class="btn ghost-btn" data-ai-action="expand">
+            <i class="bi bi-arrows-expand me-1"></i>&#25193;&#20889;&#27573;&#33853;
+        </button>
+        <button type="button" class="btn ghost-btn" data-ai-action="summarize">
+            <i class="bi bi-text-paragraph me-1"></i>&#29983;&#25104;&#25688;&#35201;
+        </button>
+        <button type="button" class="btn ghost-btn" data-ai-action="translate">
+            <i class="bi bi-translate me-1"></i>&#20013;&#33521;&#20114;&#35793;
+        </button>
+    </div>
+    <div class="ai-panel-body glass-card-soft p-3" id="ai-result" style="display: none;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+{# File import handler. #}
+(() => {
+    const importBtn = document.getElementById('import-file-btn');
+    const fileInput = document.getElementById('import-file-input');
+    const statusSpan = document.getElementById('import-status');
+    const textarea = document.querySelector('textarea[name="content_markdown"]');
+    const titleInput = document.querySelector('input[name="title"]');
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+    if (!importBtn || !fileInput || !textarea) return;
+
+    importBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+            statusSpan.textContent = 'Please select a file first.';
+            return;
+        }
+
+        importBtn.disabled = true;
+        importBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importing...';
+        statusSpan.textContent = '';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/import-file', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                statusSpan.textContent = data.error;
+                return;
+            }
+
+            if (data.markdown) {
+                textarea.value = data.markdown;
+                textarea.dispatchEvent(new Event('input'));
+            }
+            if (data.title && titleInput && !titleInput.value.trim()) {
+                titleInput.value = data.title;
+            }
+            statusSpan.textContent = 'Imported: ' + file.name;
+        } catch (err) {
+            statusSpan.textContent = 'Import failed: ' + err.message;
+        } finally {
+            importBtn.disabled = false;
+            importBtn.innerHTML = '<i class="bi bi-upload me-1"></i>\u5bfc\u5165';
+        }
+    });
+})();
+
+(() => {
+    const textarea = document.querySelector('textarea[name="content_markdown"]');
+    const preview = document.getElementById('preview-pane');
+    if (!textarea || !preview) return;
+
+    function simpleMarkdownToHtml(md) {
+        if (!md) return '<p class="muted-text text-center">Preview area</p>';
+
+        let html = md
+            .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+            .replace(/^- (.+)$/gm, '<li>$1</li>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+            .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
+            .replace(/^---$/gm, '<hr>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>');
+
+        html = html.replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>');
+        html = html.replace(/<\/ul>\s*<ul>/g, '');
+
+        return '<p>' + html + '</p>';
+    }
+
+    let debounceTimer = null;
+    textarea.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            preview.innerHTML = simpleMarkdownToHtml(textarea.value);
+        }, 300);
+    });
+
+    if (textarea.value) {
+        preview.innerHTML = simpleMarkdownToHtml(textarea.value);
+    }
+})();
+
+(() => {
+    const fab = document.getElementById('ai-fab');
+    const panel = document.getElementById('ai-panel');
+    const closeBtn = document.getElementById('ai-close');
+    const resultDiv = document.getElementById('ai-result');
+    const textarea = document.querySelector('textarea[name="content_markdown"]');
+
+    if (!fab || !panel) return;
+
+    fab.addEventListener('click', () => {
+        panel.classList.toggle('is-open');
+    });
+
+    closeBtn.addEventListener('click', () => {
+        panel.classList.remove('is-open');
+    });
+
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    document.querySelectorAll('[data-ai-action]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const action = btn.dataset.aiAction;
+            const selectedText = textarea.selectionStart !== textarea.selectionEnd
+                ? textarea.value.substring(textarea.selectionStart, textarea.selectionEnd)
+                : textarea.value;
+
+            if (!selectedText.trim()) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = 'Please select text in the editor first.';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>...';
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Calling AI assistant...';
+
+            try {
+                const response = await fetch('/api/hermes/writing-assist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({ action, text: selectedText }),
+                });
+                const data = await response.json();
+
+                if (data.result) {
+                    resultDiv.textContent = data.result;
+                } else {
+                    resultDiv.textContent = data.error || 'Processing failed.';
+                }
+            } catch (error) {
+                resultDiv.textContent = 'Network error.';
+            } finally {
+                btn.disabled = false;
+                const labels = {
+                    polish: '<i class="bi bi-magic me-1"></i>&#28070;&#33394;&#20248;&#21270;',
+                    expand: '<i class="bi bi-arrows-expand me-1"></i>&#25193;&#20889;&#27573;&#33853;',
+                    summarize: '<i class="bi bi-text-paragraph me-1"></i>&#29983;&#25104;&#25688;&#35201;',
+                    translate: '<i class="bi bi-translate me-1"></i>&#20013;&#33521;&#20114;&#35793;',
+                };
+                btn.innerHTML = labels[action] || action;
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

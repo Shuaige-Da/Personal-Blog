@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#061223">
+    <meta name="description" content="RainWave 个人博客：记录生活、音乐、技术与夜色里的微光。">
+    <title>{{ title or 'RainWave' }} · RainWave</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rainwave.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+{% set public_endpoints = ['index', 'articles', 'links', 'messages'] %}
+{% set nav_items = [
+    ('index', '首页', '01'),
+    ('articles', '文章', '02'),
+    ('links', '生活', '03'),
+    ('messages', '留言', '04')
+] %}
+{% set nav_state = namespace(active=0) %}
+{% for endpoint, label, number in nav_items %}
+    {% if current_endpoint == endpoint or (current_endpoint == 'view_blog_post' and endpoint == 'articles') %}
+        {% set nav_state.active = loop.index0 %}
+    {% endif %}
+{% endfor %}
+{% set next_item = nav_items[(nav_state.active + 1) % (nav_items|length)] %}
+{% set is_admin_page = current_user.is_authenticated and current_user.is_admin and current_endpoint not in public_endpoints and current_endpoint != 'view_blog_post' %}
+<body
+    class="rw-body {% if current_endpoint in public_endpoints or current_endpoint == 'view_blog_post' %}rw-immersive{% else %}rw-admin-mode{% endif %}{% if current_endpoint == 'index' and clock_settings %} rw-has-standalone-clock{% endif %}"
+    data-endpoint="{{ current_endpoint or '' }}"
+>
+    <a class="rw-skip-link" href="#main-content">跳到主要内容</a>
+
+    {% set active_backgrounds = background_asset.playlist_assets if background_asset.is_playlist else [background_asset] %}
+    <div
+        class="rw-backgrounds"
+        aria-hidden="true"
+        {% if background_asset.is_playlist %}
+            data-background-playlist
+            data-background-interval="{{ background_asset.playlist_interval_seconds }}"
+        {% endif %}
+    >
+        {% for background in active_backgrounds %}
+            <div class="rw-background {% if loop.first %}is-active{% endif %}" data-background-index="{{ loop.index0 }}">
+                {% if background.is_video %}
+                    <video muted loop playsinline preload="metadata">
+                        <source src="{{ background.url }}" type="{{ background.mime_type or 'video/mp4' }}">
+                    </video>
+                {% else %}
+                    <img src="{{ background.url }}" alt="" fetchpriority="{% if loop.first %}high{% else %}low{% endif %}">
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    <div class="rw-veil" aria-hidden="true"></div>
+    <div class="rw-light" aria-hidden="true"></div>
+
+    <div class="rw-app">
+        <header class="rw-topbar {% if is_admin_page %}rw-admin-topbar{% endif %}">
+            <a class="rw-brand" href="{{ url_for('index') }}" aria-label="RainWave 首页">RAINWAVE</a>
+
+            <nav class="rw-desktop-nav" aria-label="主要导航">
+                {% for endpoint, label, number in nav_items %}
+                    <a
+                        href="{{ url_for(endpoint) }}"
+                        class="{% if loop.index0 == nav_state.active %}is-active{% endif %}"
+                        {% if loop.index0 == nav_state.active %}aria-current="page"{% endif %}
+                    >{{ label }}</a>
+                {% endfor %}
+            </nav>
+
+            <div class="rw-account">
+                {% if is_admin_page %}
+                    <div class="rw-admin-direct-actions" aria-label="管理员快捷入口">
+                        <a class="rw-admin-action" href="{{ url_for('blog') }}">
+                            <i class="bi bi-grid" aria-hidden="true"></i>
+                            <span>个人博客</span>
+                        </a>
+                        <a class="rw-admin-action" href="{{ url_for('chat') }}">
+                            <i class="bi bi-robot" aria-hidden="true"></i>
+                            <span>AI 助手</span>
+                        </a>
+                    </div>
+                    <div class="dropdown rw-user-menu">
+                        <button
+                            class="rw-user-button dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-label="打开管理员菜单"
+                        >
+                            <i class="bi bi-person-circle" aria-hidden="true"></i>
+                            <span>{{ current_user.username }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('blog') }}">
+                                    <i class="bi bi-grid" aria-hidden="true"></i>
+                                    <span>个人博客</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('admin') }}">
+                                    <i class="bi bi-gear" aria-hidden="true"></i>
+                                    <span>设置中心</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('manage_blog') }}">
+                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                    <span>写文章</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('chat') }}">
+                                    <i class="bi bi-robot" aria-hidden="true"></i>
+                                    <span>AI 助手</span>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ url_for('logout') }}" method="post">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="dropdown-item rw-logout-item" type="submit">
+                                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                                        <span>退出登录</span>
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                {% elif current_user.is_authenticated %}
+                    <a class="rw-login-button" href="{{ url_for('blog') }}">后台</a>
+                {% else %}
+                    <a class="rw-login-button" href="{{ url_for('login') }}">登录</a>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if current_endpoint == 'index' and clock_settings %}
+            {% set clock_variant = 'standalone' %}
+            {% include "partials/site_clock.html" %}
+        {% endif %}
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="rw-flashes" role="status" aria-live="polite">
+                    {% for message in messages %}
+                        <div class="rw-flash">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <main id="main-content" class="rw-main" tabindex="-1">
+            {% block content %}{% endblock %}
+        </main>
+
+        {% if current_endpoint in public_endpoints or current_endpoint == 'view_blog_post' %}
+            <nav class="rw-page-index" aria-label="页面索引">
+                {% for endpoint, label, number in nav_items[:3] %}
+                    <a
+                        href="{{ url_for(endpoint) }}"
+                        class="{% if loop.index0 == nav_state.active %}is-active{% endif %}"
+                    >
+                        <em>{{ number }}</em>
+                        <span>{{ label }}</span>
+                    </a>
+                {% endfor %}
+            </nav>
+
+            <a class="rw-turn-edge" href="{{ url_for(next_item[0]) }}" data-page-next aria-label="翻到{{ next_item[1] }}">
+                <span>向下翻页</span>
+                <i class="bi bi-chevron-double-down" aria-hidden="true"></i>
+            </a>
+
+            <nav class="rw-mobile-nav" aria-label="移动端主要导航">
+                {% for endpoint, label, number in nav_items %}
+                    <a
+                        href="{{ url_for(endpoint) }}"
+                        class="{% if loop.index0 == nav_state.active %}is-active{% endif %}"
+                    >{{ label }}</a>
+                {% endfor %}
+            </nav>
+        {% endif %}
+    </div>
+
+    <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/rainwave.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

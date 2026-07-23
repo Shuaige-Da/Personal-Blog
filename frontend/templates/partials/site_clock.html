@@ -1,0 +1,14 @@
+<aside
+    class="rw-site-clock rw-site-clock--{{ clock_variant|default('standalone') }}"
+    data-clock-style="{{ clock_settings.style }}"
+    data-clock-hour-cycle="{{ clock_settings.hour_cycle }}"
+    data-clock-show-date="{{ 1 if clock_settings.show_date else 0 }}"
+    data-site-clock
+    aria-label="北京时间"
+>
+    <div class="rw-clock-label">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span>Beijing Time</span>
+    </div>
+    <div class="rw-clock-display" data-clock-display></div>
+</aside>

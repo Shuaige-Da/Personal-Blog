@@ -1,0 +1,18 @@
+{# 通用占位页模板。某个功能暂时没做完时可以先用它顶上。 #}
+{% extends "base.html" %}
+
+{% block content %}
+{# 页面主体：告诉用户这个功能稍后会补充。 #}
+<section class="d-flex align-items-center" style="min-height: calc(100vh - 180px);">
+    <div class="row w-100 justify-content-center">
+        <div class="col-lg-8">
+            <div class="glass-card p-4 p-md-5 text-center">
+                <p class="text-uppercase muted-text mb-2">Coming Soon</p>
+                <h1 class="display-5 fw-bold mb-3">{{ title }}</h1>
+                <p class="lead muted-text mb-4">{{ description }}</p>
+                <a class="btn ghost-btn" href="{{ url_for('index') }}">返回主页</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

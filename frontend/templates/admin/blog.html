@@ -1,0 +1,248 @@
+{# 管理员个人博客总览页。 #}
+{% extends "base.html" %}
+
+{% block content %}
+{# 顶部概览区：说明页面用途并显示各类内容数量。 #}
+<section class="glass-card rw-dashboard-hero p-4 p-md-5 mb-4">
+    <div class="row g-4 align-items-center">
+        <div class="col-lg-7 rw-dashboard-copy">
+            <span class="hero-chip mb-3"><i class="bi bi-stars"></i> Personal Space</span>
+            <h1 class="display-5 fw-bold mb-3">RainWave 的个人博客</h1>
+            <p class="lead muted-text mb-0">
+                这里是登录后可见的私人空间。你可以浏览自己的日记、博客、音乐、图片和视频，
+                也可以从每个模块直接进入对应的管理页面。
+            </p>
+        </div>
+        <div class="col-lg-5">
+            <div class="rw-dashboard-side">
+                {% if clock_settings %}
+                    {% set clock_variant = 'embedded' %}
+                    {% include "partials/site_clock.html" %}
+                {% endif %}
+            </div>
+            <div class="rw-dashboard-stats d-flex flex-wrap gap-3 justify-content-lg-end">
+                <div class="stat-pill">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <div>
+                        <strong>{{ blog_posts|length if blog_posts else 0 }}</strong>
+                        <span>博客</span>
+                    </div>
+                </div>
+                <div class="stat-pill">
+                    <i class="bi bi-journal-text"></i>
+                    <div>
+                        <strong>{{ diaries|length }}</strong>
+                        <span>日记</span>
+                    </div>
+                </div>
+                <div class="stat-pill">
+                    <i class="bi bi-headphones"></i>
+                    <div>
+                        <strong>{{ music|length }}</strong>
+                        <span>音乐</span>
+                    </div>
+                </div>
+                <div class="stat-pill">
+                    <i class="bi bi-images"></i>
+                    <div>
+                        <strong>{{ images|length }}</strong>
+                        <span>图片</span>
+                    </div>
+                </div>
+                <div class="stat-pill">
+                    <i class="bi bi-film"></i>
+                    <div>
+                        <strong>{{ videos|length }}</strong>
+                        <span>视频</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# 博客文章 + Hermes Agent 快捷入口。 #}
+<section class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <h3 class="section-title mb-1"><i class="bi bi-file-earmark-text me-2"></i>博客文章</h3>
+                    <p class="muted-text mb-0">管理你的长文博客，支持 Markdown 和标签分类。</p>
+                </div>
+                <a class="btn ghost-btn" href="{{ url_for('manage_blog') }}">管理博客</a>
+            </div>
+            <div class="page-grid">
+                {% for post in blog_posts[:3] if blog_posts %}
+                    <article class="glass-card-soft p-4">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                            <h5 class="mb-0">
+                                <a href="{{ url_for('view_blog_post', slug=post.slug) }}" class="text-decoration-none">
+                                    {{ post.title }}
+                                </a>
+                            </h5>
+                            {% if post.is_published %}
+                                <span class="badge text-bg-success">已发布</span>
+                            {% else %}
+                                <span class="badge text-bg-warning">草稿</span>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small muted-text mb-0">
+                            <div>
+                                {% if post.tags %}
+                                    {% for tag in post.tags.split(',')[:2] if tag.strip() %}
+                                        <span class="badge badge-soft">{{ tag.strip() }}</span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <span class="dim-text">
+                                <i class="bi bi-calendar3 me-1"></i>{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                        </div>
+                    </article>
+                {% else %}
+                    <div class="empty-state glass-card-soft">
+                        还没有发布博客文章。
+                        <a href="{{ url_for('new_blog_post') }}" class="text-decoration-underline">创建第一篇</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <h3 class="section-title mb-1"><i class="bi bi-robot me-2"></i>Hermes Agent</h3>
+                    <p class="muted-text mb-0">AI 助手，帮你编程、写作或解答问题。</p>
+                </div>
+                <a class="btn login-btn" href="{{ url_for('chat') }}">
+                    <i class="bi bi-chat-dots me-1"></i>开始对话
+                </a>
+            </div>
+            <div class="glass-card-soft p-4">
+                <p class="muted-text mb-0 small">
+                    Hermes Agent 可以帮你：<br>
+                    • 回答技术问题<br>
+                    • 润色和扩写文章<br>
+                    • 翻译内容<br>
+                    • 生成创意灵感
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-7">
+        {# 日记列表。 #}
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <h3 class="section-title mb-1"><i class="bi bi-journal me-2"></i>个人日记</h3>
+                    <p class="muted-text mb-0">记录最近的心情、想法和生活片段。</p>
+                </div>
+                <a class="btn ghost-btn" href="{{ url_for('manage_diaries') }}">管理日记</a>
+            </div>
+            <div class="page-grid">
+                {% for diary in diaries %}
+                    <article class="glass-card-soft p-4">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                            <h5 class="mb-0">{{ diary.title }}</h5>
+                            <span class="dim-text small">{{ diary.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <p class="mb-0" style="white-space: pre-wrap;">{{ diary.content }}</p>
+                    </article>
+                {% else %}
+                    <div class="empty-state glass-card-soft">还没有发布日记，可以先去管理页写下第一篇。</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        {# 音乐列表。 #}
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <h3 class="section-title mb-1"><i class="bi bi-headphones me-2"></i>音乐收藏</h3>
+                    <p class="muted-text mb-0">给博客加一点氛围感的声音。</p>
+                </div>
+                <a class="btn ghost-btn" href="{{ url_for('manage_music') }}">管理音乐</a>
+            </div>
+            <div class="page-grid">
+                {% for item in music %}
+                    <div class="glass-card-soft rw-media-item p-3">
+                        <p class="mb-2 fw-semibold">{{ item.original_name }}</p>
+                        <audio controls class="w-100" data-rw-audio>
+                            <source src="{{ url_for('static', filename='uploads/music/' + item.filename) }}">
+                        </audio>
+                    </div>
+                {% else %}
+                    <div class="empty-state glass-card-soft">还没有上传音乐，可以先去管理页添加内容。</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mt-1">
+    <div class="col-xl-6">
+        {# 图片缩略图展示区。 #}
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <h3 class="section-title mb-1"><i class="bi bi-images me-2"></i>图片画廊</h3>
+                    <p class="muted-text mb-0">展示博客中的图片内容。</p>
+                </div>
+                <a class="btn ghost-btn" href="{{ url_for('manage_images') }}">管理图片</a>
+            </div>
+            <div class="row g-3">
+                {% for image in images %}
+                    <div class="col-sm-6">
+                        <div class="glass-card-soft p-2 h-100">
+                            <img
+                                src="{{ url_for('static', filename='uploads/images/' + image.filename) }}"
+                                alt="{{ image.original_name }}"
+                                class="media-thumb"
+                                style="height: 220px;"
+                            >
+                            <p class="small muted-text mb-0 mt-2 px-1 text-truncate">{{ image.original_name }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="col-12">
+                        <div class="empty-state glass-card-soft">还没有上传图片，可以先去管理页添加作品。</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        {# 视频展示区。 #}
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <h3 class="section-title mb-1"><i class="bi bi-film me-2"></i>视频内容</h3>
+                    <p class="muted-text mb-0">统一查看和播放博客中的视频。</p>
+                </div>
+                <a class="btn ghost-btn" href="{{ url_for('manage_videos') }}">管理视频</a>
+            </div>
+            <div class="page-grid">
+                {% for video in videos %}
+                    <div class="glass-card-soft p-3">
+                        <p class="mb-2 fw-semibold">{{ video.original_name }}</p>
+                        <video controls class="w-100 rounded-4 rw-video-player" style="max-height: 320px;">
+                            <source src="{{ url_for('static', filename='uploads/videos/' + video.filename) }}">
+                        </video>
+                    </div>
+                {% else %}
+                    <div class="empty-state glass-card-soft">还没有上传视频，可以先去管理页添加内容。</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

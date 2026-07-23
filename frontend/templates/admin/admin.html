@@ -1,0 +1,1106 @@
+﻿{# 设置中心模板。
+   左侧垂直导航 + 右侧设置内容区。 #}
+{% extends "base.html" %}
+{% from "_action_macros.html" import post_button %}
+
+{% block content %}
+{% set next_url = url_for('admin') %}
+
+{# 页面顶部简要说明。 #}
+<section class="glass-card p-4 mb-4" id="settings-top">
+    <div class="row g-3 align-items-center">
+        <div class="col-xl-7">
+            <span class="hero-chip mb-2"><i class="bi bi-sliders"></i> Settings Center</span>
+            <h2 class="fw-bold mb-1">博客设置中心</h2>
+            <p class="muted-text mb-0">
+                管理站点背景、时间组件、首页文案，以及审核游客留言。
+            </p>
+        </div>
+        <div class="col-xl-5">
+            <div class="rw-admin-quick-grid">
+                <a class="rw-quick-action" href="{{ url_for('manage_blog') }}">
+                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                    <span>文章管理</span>
+                </a>
+                <a class="rw-quick-action" href="{{ url_for('manage_diaries') }}">
+                    <i class="bi bi-journal-richtext" aria-hidden="true"></i>
+                    <span>日记管理</span>
+                </a>
+                <a class="rw-quick-action" href="{{ url_for('manage_music') }}">
+                    <i class="bi bi-headphones" aria-hidden="true"></i>
+                    <span>音乐管理</span>
+                </a>
+                <a class="rw-quick-action" href="{{ url_for('manage_images') }}">
+                    <i class="bi bi-images" aria-hidden="true"></i>
+                    <span>图片管理</span>
+                </a>
+                <a class="rw-quick-action" href="{{ url_for('manage_videos') }}">
+                    <i class="bi bi-film" aria-hidden="true"></i>
+                    <span>视频管理</span>
+                </a>
+                <a class="rw-quick-action" href="{{ url_for('chat') }}">
+                    <i class="bi bi-robot" aria-hidden="true"></i>
+                    <span>AI 助手</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="settings-layout">
+    {# 左侧：垂直导航菜单。 #}
+    <div class="settings-nav-column">
+        <nav class="glass-card p-3 settings-nav-card">
+            <h6 class="fw-bold muted-text text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.1em;">Settings</h6>
+            <ul class="nav settings-nav-list">
+                <li class="nav-item">
+                    <a class="nav-link settings-nav-link" href="#settings-top" data-settings-top>
+                        <i class="bi bi-arrow-up-circle me-2"></i>回到顶部
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link settings-nav-link active" href="#section-single-bg" data-settings-panel="section-single-bg">
+                        <i class="bi bi-image me-2"></i>单个背景
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link settings-nav-link" href="#section-playlist-bg" data-settings-panel="section-playlist-bg">
+                        <i class="bi bi-collection-play me-2"></i>文件夹轮播背景
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link settings-nav-link" href="#section-clock" data-settings-panel="section-clock">
+                        <i class="bi bi-clock me-2"></i>顶部时间组件
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link settings-nav-link" href="#section-homepage" data-settings-panel="section-homepage">
+                        <i class="bi bi-chat-square-heart me-2"></i>首页个性描述
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link settings-nav-link" href="#section-bg-status" data-settings-panel="section-bg-status">
+                        <i class="bi bi-display me-2"></i>当前背景状态
+                    </a>
+                </li>
+                <hr class="border-secondary-subtle my-2 settings-nav-divider">
+                <h6 class="fw-bold muted-text text-uppercase mb-2 mt-1 settings-nav-heading" style="font-size: 0.75rem; letter-spacing: 0.1em;">Review</h6>
+                <li class="nav-item">
+                    <a class="nav-link settings-nav-link" href="#section-message-review" data-settings-panel="section-message-review">
+                        <i class="bi bi-chat-heart me-2"></i>留言审核
+                        <span class="badge badge-soft ms-auto">{{ messages|length }}</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    {# 右侧：设置表单和审核内容。 #}
+    <div class="settings-detail-column">
+        {# ---- 单个背景 ---- #}
+        <div id="section-single-bg" class="glass-card p-4 mb-4 settings-panel">
+            <div class="single-bg-header">
+                <h5 class="section-title fw-bold mb-1"><i class="bi bi-image me-2"></i>单个背景</h5>
+                <p class="small muted-text mb-0">支持从本地上传新背景，也可以直接从服务器已保存的背景素材中选择。</p>
+            </div>
+
+            <form action="" method="post" enctype="multipart/form-data" class="single-bg-form">
+                {{ background_form.hidden_tag() }}
+                <input type="hidden" id="background-library-path" name="library_background_path" value="">
+                <div class="single-bg-workspace">
+                    <div class="single-bg-local-form">
+                        <div class="row g-3 single-bg-controls">
+                            <div class="col-12">
+                                {{ background_form.target.label(class="form-label") }}
+                                {{ background_form.target(class="form-select", id="background-target-select") }}
+                            </div>
+                        </div>
+
+                        <div id="background-local-panel" class="single-bg-local-body">
+                            <div>
+                                {{ background_form.image.label(class="form-label") }}
+                                {{ background_form.image(class="form-control", id="background-image-input", accept="image/*,video/*") }}
+                            </div>
+                            <div class="form-text">
+                                文件会原样保存，不会在后端重新压缩。也可以直接点击右侧服务器背景预览后保存。
+                            </div>
+
+                            <div class="preview-frame">
+                                <img id="background-preview-image" alt="背景预览" style="display: none;">
+                                <video id="background-preview-video" autoplay muted loop playsinline controls style="display: none;"></video>
+                                <div class="preview-overlay">
+                                    <div class="fw-semibold" id="background-preview-title">主页背景预览</div>
+                                    <div class="small muted-text" id="background-preview-hint">当前显示的是已保存背景，选择新文件或服务器图片后会切换预览。</div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                {{ background_form.submit(class="btn login-btn") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <aside class="single-bg-library">
+                        <div class="single-bg-library-head">
+                            <div>
+                                <label class="form-label mb-1">背景来源</label>
+                                <div class="background-source-toggle" role="group" aria-label="背景来源">
+                                    <button type="button" class="background-source-btn is-active" data-background-source="local">
+                                        <i class="bi bi-laptop"></i> 本地选择
+                                    </button>
+                                    <button type="button" class="background-source-btn" data-background-source="server">
+                                        <i class="bi bi-folder2-open"></i> 服务器已有
+                                    </button>
+                                </div>
+                                <div class="small muted-text mt-2">点击下方素材会立即显示在左侧预览。</div>
+                            </div>
+                            <span class="badge badge-soft">{{ background_library_assets|length }} 个</span>
+                        </div>
+
+                        <div class="server-bg-current" id="background-library-current">
+                            尚未选择服务器背景
+                        </div>
+
+                        {% if background_library_assets %}
+                            <div class="server-bg-grid" id="background-library-grid">
+                                {% for asset in background_library_assets %}
+                                    <button
+                                        type="button"
+                                        class="server-bg-card"
+                                        data-path="{{ asset.path }}"
+                                        data-name="{{ asset.name }}"
+                                        data-url="{{ asset.url }}"
+                                        data-kind="{{ asset.kind }}"
+                                    >
+                                        <span class="server-bg-thumb">
+                                            {% if asset.kind == 'video' %}
+                                                <video src="{{ asset.url }}" muted loop playsinline preload="metadata"></video>
+                                                <span class="server-bg-kind"><i class="bi bi-play-fill"></i> 视频</span>
+                                            {% else %}
+                                                <img src="{{ asset.url }}" alt="{{ asset.name }}" loading="lazy">
+                                                <span class="server-bg-kind"><i class="bi bi-image"></i> 图片</span>
+                                            {% endif %}
+                                        </span>
+                                        <span class="server-bg-meta">
+                                            <span class="server-bg-name">{{ asset.name }}</span>
+                                            <span class="server-bg-source">
+                                                {% if asset.source == 'uploaded' %}上传背景{% else %}内置背景{% endif %}
+                                            </span>
+                                        </span>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="empty-state glass-card-soft">服务器背景目录中暂时没有可选的图片或视频。</div>
+                        {% endif %}
+                    </aside>
+                </div>
+            </form>
+        </div>
+
+        {# ---- 文件夹轮播背景 ---- #}
+        <div id="section-playlist-bg" class="glass-card p-4 mb-4 settings-panel" hidden>
+            <h5 class="section-title fw-bold mb-1"><i class="bi bi-collection-play me-2"></i>文件夹轮播背景</h5>
+            <p class="small muted-text mb-3">选择一个图片文件夹上传，前台会按你设置的时间自动循环切换背景图片。</p>
+
+            <form action="" method="post" enctype="multipart/form-data">
+                {{ background_playlist_form.hidden_tag() }}
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        {{ background_playlist_form.target.label(class="form-label") }}
+                        {{ background_playlist_form.target(class="form-select", id="background-playlist-target-select") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ background_playlist_form.interval_seconds.label(class="form-label") }}
+                        {{ background_playlist_form.interval_seconds(class="form-control", min="1", max="3600") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ background_playlist_form.image_limit.label(class="form-label") }}
+                        {{ background_playlist_form.image_limit(class="form-control", min="1", max="500") }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    {{ background_playlist_form.folder.label(class="form-label") }}
+                    {{ background_playlist_form.folder(
+                        class="form-control",
+                        id="background-playlist-folder-input",
+                        accept="image/*",
+                        webkitdirectory=True,
+                        directory=True,
+                        multiple=True
+                    ) }}
+                    <div class="form-text" id="background-playlist-folder-hint">
+                        只会使用文件夹里的图片文件。重新上传文件夹时会替换当前这组轮播图片。
+                    </div>
+                </div>
+                <div class="glass-card-soft p-3 mb-3">
+                    <div class="fw-semibold mb-1">当前轮播说明</div>
+                    <div class="small muted-text" id="background-playlist-status">
+                        选择目标页面后，这里会显示当前是否启用了文件夹轮播，以及轮播张数和切换时间。
+                    </div>
+                </div>
+                <div class="d-grid">
+                    {{ background_playlist_form.submit(class="btn ghost-btn") }}
+                </div>
+            </form>
+        </div>
+
+        {# ---- 顶部时间组件 ---- #}
+        <div id="section-clock" class="glass-card p-4 mb-4 settings-panel" hidden>
+            <h5 class="section-title fw-bold mb-1"><i class="bi bi-clock me-2"></i>顶部时间组件</h5>
+            <p class="small muted-text mb-3">统一按北京时间显示，可切换数字、文字和钟表样式，也可设置 12/24 小时制与日期显示。</p>
+
+            <form action="" method="post">
+                {{ clock_settings_form.hidden_tag() }}
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        {{ clock_settings_form.style.label(class="form-label") }}
+                        {{ clock_settings_form.style(class="form-select") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ clock_settings_form.hour_cycle.label(class="form-label") }}
+                        {{ clock_settings_form.hour_cycle(class="form-select") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ clock_settings_form.show_date.label(class="form-label") }}
+                        {{ clock_settings_form.show_date(class="form-select") }}
+                    </div>
+                </div>
+                <div class="glass-card-soft p-3 mb-3">
+                    <div class="fw-semibold mb-1">样式说明</div>
+                    <div class="small muted-text">
+                        数字样式更清爽，文字样式更像问候语，钟表样式会显示一个更精致的透明玻璃挂件。
+                    </div>
+                </div>
+                <div class="d-grid">
+                    {{ clock_settings_form.submit(class="btn ghost-btn") }}
+                </div>
+            </form>
+        </div>
+
+        {# ---- 首页个性描述 ---- #}
+        <div id="section-homepage" class="glass-card p-4 mb-4 settings-panel" hidden>
+            <h5 class="section-title fw-bold mb-1"><i class="bi bi-chat-square-heart me-2"></i>首页个性描述</h5>
+            <p class="small muted-text mb-3">修改首页欢迎语和个性描述文案，会立即影响首页展示。</p>
+
+            <form action="" method="post" class="mb-4">
+                {{ homepage_title_form.hidden_tag() }}
+                <div class="setting-split mb-3">
+                    <div class="fw-semibold mb-2">欢迎语设置</div>
+                    <div class="mb-3">
+                        {{ homepage_title_form.title.label(class="form-label") }}
+                        {{ homepage_title_form.title(class="form-control", placeholder="例如：欢迎来到 RainWave 的博客") }}
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            {{ homepage_title_form.title_font.label(class="form-label") }}
+                            {{ homepage_title_form.title_font(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ homepage_title_form.title_color.label(class="form-label") }}
+                            {{ homepage_title_form.title_color(class="form-control form-control-color") }}
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        {{ homepage_title_form.submit(class="btn ghost-btn") }}
+                    </div>
+                </div>
+            </form>
+
+            <form action="" method="post">
+                {{ homepage_description_form.hidden_tag() }}
+                <div class="setting-split mb-3">
+                    <div class="fw-semibold mb-2">个性描述设置</div>
+                    <div class="mb-3">
+                        {{ homepage_description_form.description.label(class="form-label") }}
+                        {{ homepage_description_form.description(class="form-control", rows="4", placeholder="写一点属于你的首页个性描述") }}
+                    </div>
+                    <div class="glass-card-soft p-3 mb-3">
+                        <div class="fw-semibold mb-1">展示位置</div>
+                        <div class="small muted-text">
+                            这段文字会显示在首页欢迎标题下方，适合写博客气质、记录方向或一句简短的自我介绍。
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            {{ homepage_description_form.description_font.label(class="form-label") }}
+                            {{ homepage_description_form.description_font(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ homepage_description_form.description_color.label(class="form-label") }}
+                            {{ homepage_description_form.description_color(class="form-control form-control-color") }}
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        {{ homepage_description_form.submit(class="btn ghost-btn") }}
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {# ---- 当前背景状态 ---- #}
+        <div id="section-bg-status" class="glass-card p-4 mb-4 settings-panel" hidden>
+            <h5 class="section-title fw-bold mb-1"><i class="bi bi-display me-2"></i>当前背景状态</h5>
+            <p class="small muted-text mb-3">主页和博客页当前使用的背景信息。</p>
+
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="glass-card-soft p-2 h-100">
+                        {% if home_background_asset.is_video %}
+                            <video class="media-thumb" style="height: 120px;" autoplay muted loop playsinline>
+                                <source src="{{ home_background_asset.url }}" {% if home_background_asset.mime_type %}type="{{ home_background_asset.mime_type }}"{% endif %}>
+                            </video>
+                        {% else %}
+                            <img src="{{ home_background_asset.url }}" alt="主页背景" class="media-thumb" style="height: 120px;">
+                        {% endif %}
+                        <p class="small muted-text mt-2 mb-0 px-1">
+                            主页背景
+                            {% if home_background_asset.is_playlist %}
+                                （文件夹轮播，{{ home_background_asset.playlist_assets|length }} 张，每 {{ home_background_asset.playlist_interval_seconds }} 秒）
+                            {% elif home_background_asset.is_video %}
+                                （单个视频背景）
+                            {% else %}
+                                （单个图片背景）
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="glass-card-soft p-2 h-100">
+                        {% if blog_background_asset.is_video %}
+                            <video class="media-thumb" style="height: 120px;" autoplay muted loop playsinline>
+                                <source src="{{ blog_background_asset.url }}" {% if blog_background_asset.mime_type %}type="{{ blog_background_asset.mime_type }}"{% endif %}>
+                            </video>
+                        {% else %}
+                            <img src="{{ blog_background_asset.url }}" alt="博客背景" class="media-thumb" style="height: 120px;">
+                        {% endif %}
+                        <p class="small muted-text mt-2 mb-0 px-1">
+                            博客背景
+                            {% if blog_background_asset.is_playlist %}
+                                （文件夹轮播，{{ blog_background_asset.playlist_assets|length }} 张，每 {{ blog_background_asset.playlist_interval_seconds }} 秒）
+                            {% elif blog_background_asset.is_video %}
+                                （单个视频背景）
+                            {% else %}
+                                （单个图片背景）
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ---- 留言审核 ---- #}
+        <div id="section-message-review" class="glass-card p-4 mb-4 settings-panel" hidden>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="section-title fw-bold mb-0"><i class="bi bi-chat-heart me-2"></i>留言审核</h5>
+                    <p class="small muted-text mb-0">处理游客留言，未通过的留言不会出现在公开留言页。</p>
+                </div>
+                <span class="badge badge-soft">{{ messages|length }} 条留言</span>
+            </div>
+
+            <div class="message-review-summary mb-3">
+                <div class="glass-card-soft p-3">
+                    <div class="small muted-text">待审核</div>
+                    <div class="fs-4 fw-bold">{{ messages | rejectattr('is_approved') | list | length }}</div>
+                </div>
+                <div class="glass-card-soft p-3">
+                    <div class="small muted-text">已通过</div>
+                    <div class="fs-4 fw-bold">{{ messages | selectattr('is_approved') | list | length }}</div>
+                </div>
+                <div class="glass-card-soft p-3">
+                    <div class="small muted-text">全部留言</div>
+                    <div class="fs-4 fw-bold">{{ messages|length }}</div>
+                </div>
+            </div>
+
+            <div class="page-grid">
+                {% for message in messages %}
+                    <article class="glass-card-soft p-3 message-review-card{% if not message.is_approved %} is-pending{% endif %}">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <h6 class="fw-bold mb-0">{{ message.nickname }}</h6>
+                                    {% if message.is_approved %}
+                                        <span class="badge text-bg-success">已通过</span>
+                                    {% else %}
+                                        <span class="badge text-bg-warning">待审核</span>
+                                    {% endif %}
+                                </div>
+                                <p class="small muted-text mb-0 mt-1">
+                                    <i class="bi bi-clock me-1"></i>{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </p>
+                            </div>
+                            <div class="toolbar">
+                                {% if not message.is_approved %}
+                                    {{ post_button(url_for('approve_message', message_id=message.id), '通过', 'ghost-btn', '', next_url) }}
+                                {% endif %}
+                                {{ post_button(url_for('delete_message', message_id=message.id), '删除', 'danger-btn', '确定删除这条留言吗？', next_url) }}
+                            </div>
+                        </div>
+                        <div class="message-review-content">{{ message.content }}</div>
+                    </article>
+                {% else %}
+                    <div class="empty-state glass-card-soft">还没有游客留言。</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .settings-layout {
+        display: grid;
+        grid-template-columns: minmax(320px, 0.35fr) minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .settings-nav-card {
+        height: 720px;
+        position: sticky;
+        top: 1rem;
+        overflow: hidden;
+    }
+
+    .settings-nav-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.65rem;
+        padding: 0;
+    }
+
+    .settings-nav-divider,
+    .settings-nav-heading {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .settings-detail-column .settings-panel {
+        height: 720px;
+        margin-bottom: 0 !important;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    #section-single-bg:not([hidden]) {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 1rem;
+        overflow: hidden;
+    }
+
+    .single-bg-form {
+        display: grid;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .single-bg-workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+        gap: 1rem;
+        min-height: 0;
+        height: 100%;
+    }
+
+    .single-bg-form,
+    .single-bg-local-form,
+    .single-bg-local-body,
+    .single-bg-library {
+        min-height: 0;
+    }
+
+    .single-bg-local-form {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 1rem;
+    }
+
+    .single-bg-controls {
+        margin-bottom: 0;
+    }
+
+    .single-bg-local-body {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        gap: 0.75rem;
+    }
+
+    .single-bg-local-body .preview-frame {
+        min-height: 0;
+        height: 100%;
+        margin-bottom: 0 !important;
+    }
+
+    .single-bg-library {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        gap: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        padding: 0.85rem;
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .single-bg-library-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.75rem;
+        align-items: start;
+    }
+
+    .single-bg-library .server-bg-grid {
+        grid-template-columns: 1fr;
+        gap: 0.65rem;
+        max-height: none;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 0.15rem;
+    }
+
+    .single-bg-library .server-bg-card {
+        grid-template-columns: 120px minmax(0, 1fr);
+        align-items: center;
+        gap: 0.65rem;
+    }
+
+    .single-bg-library .server-bg-meta {
+        align-self: center;
+    }
+
+    .settings-nav-link {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border-radius: 10px;
+        color: var(--text-soft);
+        font-size: 0.9rem;
+        transition: background 0.18s ease, color 0.18s ease;
+    }
+
+    .settings-nav-link:hover,
+    .settings-nav-link:focus {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-main);
+    }
+
+    .settings-nav-link.active {
+        background: rgba(141, 231, 213, 0.12);
+        color: var(--accent);
+    }
+
+    .settings-nav-link .badge {
+        font-size: 0.7rem;
+    }
+
+    .message-review-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .message-review-card.is-pending {
+        border-color: rgba(255, 193, 7, 0.28);
+        background: rgba(255, 193, 7, 0.06);
+    }
+
+    .message-review-content {
+        border-radius: 8px;
+        padding: 0.9rem;
+        min-height: 72px;
+        color: var(--text-main);
+        background: rgba(255, 255, 255, 0.05);
+        white-space: pre-wrap;
+        line-height: 1.7;
+    }
+
+    @media (max-width: 767.98px) {
+        .message-review-summary {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .background-source-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        padding: 0.35rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .background-source-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        min-height: 42px;
+        border: 0;
+        border-radius: 12px;
+        color: var(--text-soft);
+        background: transparent;
+        font-weight: 700;
+        transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .background-source-btn:hover,
+    .background-source-btn:focus-visible {
+        color: var(--text-main);
+        background: rgba(255, 255, 255, 0.08);
+        outline: none;
+    }
+
+    .background-source-btn.is-active {
+        color: var(--accent);
+        background: rgba(141, 231, 213, 0.13);
+        box-shadow: inset 0 0 0 1px rgba(141, 231, 213, 0.2);
+    }
+
+    .server-bg-current {
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        padding: 0.65rem 0.9rem;
+        color: var(--text-main);
+        background: rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .server-bg-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.85rem;
+        max-height: 620px;
+        overflow-y: auto;
+        padding: 0.15rem 0.25rem 0.25rem 0;
+    }
+
+    .server-bg-card {
+        display: grid;
+        gap: 0.65rem;
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 0.55rem;
+        color: var(--text-soft);
+        text-align: left;
+        background: rgba(255, 255, 255, 0.04);
+        transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+    }
+
+    .server-bg-card:hover,
+    .server-bg-card:focus-visible {
+        border-color: rgba(141, 231, 213, 0.42);
+        background: rgba(141, 231, 213, 0.08);
+        transform: translateY(-1px);
+        outline: none;
+    }
+
+    .server-bg-card.is-selected {
+        border-color: rgba(141, 231, 213, 0.9);
+        background: rgba(141, 231, 213, 0.14);
+        box-shadow: 0 0 0 2px rgba(141, 231, 213, 0.14);
+        color: var(--text-main);
+    }
+
+    .server-bg-thumb {
+        position: relative;
+        display: block;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.22);
+    }
+
+    .server-bg-thumb img,
+    .server-bg-thumb video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .server-bg-kind {
+        position: absolute;
+        left: 0.5rem;
+        bottom: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        border-radius: 999px;
+        padding: 0.2rem 0.45rem;
+        font-size: 0.72rem;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.52);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .server-bg-meta {
+        display: grid;
+        gap: 0.2rem;
+        min-width: 0;
+    }
+
+    .server-bg-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 700;
+        font-size: 0.88rem;
+    }
+
+    .server-bg-source {
+        color: var(--text-dim);
+        font-size: 0.76rem;
+    }
+
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 1rem;
+    }
+
+    @media (max-width: 1199.98px) {
+        .settings-layout {
+            grid-template-columns: minmax(280px, 0.4fr) minmax(0, 1fr);
+        }
+
+        .settings-nav-card,
+        .settings-detail-column .settings-panel {
+            height: 660px;
+        }
+
+        .single-bg-workspace {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .settings-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-nav-card {
+            height: auto;
+            position: static;
+        }
+
+        .settings-detail-column .settings-panel {
+            height: auto;
+            min-height: 620px;
+            overflow: visible;
+        }
+
+        #section-single-bg:not([hidden]),
+        .single-bg-form,
+        .single-bg-local-form,
+        .single-bg-local-body {
+            display: block;
+        }
+
+        .single-bg-workspace {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .single-bg-local-body > * + * {
+            margin-top: 0.85rem;
+        }
+
+        .single-bg-library .server-bg-card {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+    (() => {
+        // 左侧目录切换：右侧一次只展示当前设置面板。
+        const panelLinks = document.querySelectorAll('[data-settings-panel]');
+        const topLink = document.querySelector('[data-settings-top]');
+        const panels = document.querySelectorAll('.settings-panel');
+
+        const showPanel = (panelId, shouldScroll = true) => {
+            panels.forEach((panel) => {
+                panel.hidden = panel.id !== panelId;
+            });
+            panelLinks.forEach((link) => {
+                link.classList.toggle('active', link.dataset.settingsPanel === panelId);
+            });
+            if (shouldScroll) {
+                document.getElementById('settings-top')?.scrollIntoView({ behavior: 'smooth' });
+            }
+        };
+
+        panelLinks.forEach((link) => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const panelId = link.dataset.settingsPanel;
+                if (!panelId) return;
+                showPanel(panelId);
+                history.replaceState(null, '', `#${panelId}`);
+            });
+        });
+
+        if (topLink) {
+            topLink.addEventListener('click', (event) => {
+                event.preventDefault();
+                document.getElementById('settings-top')?.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
+
+        const requestedPanel = window.location.hash ? window.location.hash.slice(1) : '';
+        const initialPanel = document.getElementById(requestedPanel)?.classList.contains('settings-panel')
+            ? requestedPanel
+            : 'section-single-bg';
+        showPanel(initialPanel, false);
+    })();
+</script>
+<script nonce="{{ csp_nonce }}">
+    (() => {
+        // 设置页里的背景预览和轮播状态提示脚本。
+        const targetSelect = document.getElementById('background-target-select');
+        const fileInput = document.getElementById('background-image-input');
+        const previewImage = document.getElementById('background-preview-image');
+        const previewVideo = document.getElementById('background-preview-video');
+        const previewTitle = document.getElementById('background-preview-title');
+        const previewHint = document.getElementById('background-preview-hint');
+        const sourceButtons = document.querySelectorAll('[data-background-source]');
+        const playlistTargetSelect = document.getElementById('background-playlist-target-select');
+        const playlistFolderInput = document.getElementById('background-playlist-folder-input');
+        const playlistFolderHint = document.getElementById('background-playlist-folder-hint');
+        const playlistStatus = document.getElementById('background-playlist-status');
+        const libraryGrid = document.getElementById('background-library-grid');
+        const libraryPathInput = document.getElementById('background-library-path');
+        const libraryCurrent = document.getElementById('background-library-current');
+
+        const singleTargetMap = {
+            home_background: {{ {
+                'label': '主页背景预览',
+                'url': home_background_asset.url,
+                'kind': home_background_asset.kind,
+                'isPlaylist': home_background_asset.is_playlist,
+                'playlistCount': home_background_asset.playlist_assets | length,
+                'playlistIntervalSeconds': home_background_asset.playlist_interval_seconds,
+            } | tojson }},
+            blog_background: {{ {
+                'label': '博客背景预览',
+                'url': blog_background_asset.url,
+                'kind': blog_background_asset.kind,
+                'isPlaylist': blog_background_asset.is_playlist,
+                'playlistCount': blog_background_asset.playlist_assets | length,
+                'playlistIntervalSeconds': blog_background_asset.playlist_interval_seconds,
+            } | tojson }},
+        };
+
+        const playlistTargetMap = {
+            home_background: {{ {
+                'label': '主页背景',
+                'isPlaylist': home_background_asset.is_playlist,
+                'playlistCount': home_background_asset.playlist_assets | length,
+                'playlistIntervalSeconds': home_background_asset.playlist_interval_seconds,
+            } | tojson }},
+            blog_background: {{ {
+                'label': '博客背景',
+                'isPlaylist': blog_background_asset.is_playlist,
+                'playlistCount': blog_background_asset.playlist_assets | length,
+                'playlistIntervalSeconds': blog_background_asset.playlist_interval_seconds,
+            } | tojson }},
+        };
+
+        let objectUrl = null;
+
+        const revokeObjectUrl = () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                objectUrl = null;
+            }
+        };
+
+        const resetPreview = () => {
+            previewImage.style.display = 'none';
+            previewVideo.style.display = 'none';
+            previewImage.removeAttribute('src');
+            previewVideo.pause();
+            previewVideo.removeAttribute('src');
+            previewVideo.load();
+        };
+
+        const renderPreview = (kind, src) => {
+            resetPreview();
+            if (kind === 'video') {
+                previewVideo.src = src;
+                previewVideo.style.display = 'block';
+                previewVideo.load();
+                return;
+            }
+            previewImage.src = src;
+            previewImage.style.display = 'block';
+        };
+
+        const inferKindFromFile = (file) => {
+            if (file.type && file.type.startsWith('video/')) {
+                return 'video';
+            }
+            return 'image';
+        };
+
+        const applyCurrentPreview = () => {
+            if (!targetSelect || !previewTitle || !previewHint) {
+                return;
+            }
+            const selected = singleTargetMap[targetSelect.value] || singleTargetMap.home_background;
+            previewTitle.textContent = selected.label;
+            if (selected.isPlaylist) {
+                previewHint.textContent = `当前页面正在使用文件夹轮播，共 ${selected.playlistCount} 张图片，每 ${selected.playlistIntervalSeconds} 秒切换一次。上传单个背景后会关闭轮播。`;
+            } else {
+                previewHint.textContent = '当前显示的是已保存背景，选择新文件后会切换为本地预览。';
+            }
+            renderPreview(selected.kind, selected.url);
+        };
+
+        const setBackgroundSource = (source) => {
+            sourceButtons.forEach((button) => {
+                button.classList.toggle('is-active', button.dataset.backgroundSource === source);
+            });
+        };
+
+        const clearLibrarySelection = () => {
+            if (libraryPathInput) {
+                libraryPathInput.value = '';
+            }
+            libraryGrid?.querySelectorAll('.server-bg-card').forEach((item) => item.classList.remove('is-selected'));
+            if (libraryCurrent) {
+                libraryCurrent.textContent = '尚未选择服务器背景';
+            }
+        };
+
+        const applyLibraryPreview = (card) => {
+            if (!card || !libraryPathInput || !previewTitle || !previewHint) {
+                return;
+            }
+            revokeObjectUrl();
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            libraryPathInput.value = card.dataset.path || '';
+            if (libraryCurrent) {
+                libraryCurrent.textContent = card.dataset.name || card.dataset.path || '';
+            }
+            setBackgroundSource('server');
+            const selected = singleTargetMap[targetSelect.value] || singleTargetMap.home_background;
+            previewTitle.textContent = `${selected.label}（服务器预览）`;
+            previewHint.textContent = `已选择服务器背景 ${card.dataset.name || card.dataset.path || ''}，点击“更新单个背景”后会应用到当前页面。`;
+            renderPreview(card.dataset.kind || 'image', card.dataset.url || '');
+        };
+
+        const updateSinglePreview = () => {
+            revokeObjectUrl();
+            clearLibrarySelection();
+            setBackgroundSource('local');
+            const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+            if (!file) {
+                applyCurrentPreview();
+                return;
+            }
+            const selected = singleTargetMap[targetSelect.value] || singleTargetMap.home_background;
+            objectUrl = URL.createObjectURL(file);
+            previewTitle.textContent = `${selected.label}（本地预览）`;
+            previewHint.textContent = `已选择 ${file.name}，保存后会替换当前背景，并关闭该页面的文件夹轮播。`;
+            renderPreview(inferKindFromFile(file), objectUrl);
+        };
+
+        const applyPlaylistStatus = () => {
+            if (!playlistTargetSelect || !playlistStatus) {
+                return;
+            }
+            const selected = playlistTargetMap[playlistTargetSelect.value] || playlistTargetMap.home_background;
+            if (selected.isPlaylist) {
+                playlistStatus.textContent = `${selected.label} 当前已启用文件夹轮播，共 ${selected.playlistCount} 张图片，每 ${selected.playlistIntervalSeconds} 秒切换一次。你可以重新上传文件夹覆盖它。`;
+            } else {
+                playlistStatus.textContent = `${selected.label} 当前还没有启用文件夹轮播。上传图片文件夹后会开始按你设置的时间循环播放。`;
+            }
+        };
+
+        const updatePlaylistFolderHint = () => {
+            if (!playlistFolderInput || !playlistFolderHint) {
+                return;
+            }
+            const fileCount = playlistFolderInput.files ? playlistFolderInput.files.length : 0;
+            if (!fileCount) {
+                playlistFolderHint.textContent = '只会使用文件夹里的图片文件。重新上传文件夹时会替换当前这组轮播图片。';
+                return;
+            }
+            playlistFolderHint.textContent = `当前已选择 ${fileCount} 个文件，保存时只会保留其中可识别的图片，并按你填写的数量参与轮播。`;
+        };
+
+        if (targetSelect && fileInput) {
+            targetSelect.addEventListener('change', () => {
+                if (libraryPathInput && libraryPathInput.value) {
+                    const selectedCard = libraryGrid?.querySelector('.server-bg-card.is-selected');
+                    if (selectedCard) {
+                        applyLibraryPreview(selectedCard);
+                        return;
+                    }
+                }
+                updateSinglePreview();
+            });
+            fileInput.addEventListener('change', updateSinglePreview);
+            applyCurrentPreview();
+        }
+
+        sourceButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const source = button.dataset.backgroundSource || 'local';
+                setBackgroundSource(source);
+                if (source === 'local') {
+                    updateSinglePreview();
+                }
+            });
+        });
+
+        if (playlistTargetSelect) {
+            playlistTargetSelect.addEventListener('change', applyPlaylistStatus);
+            applyPlaylistStatus();
+        }
+
+        if (playlistFolderInput) {
+            playlistFolderInput.addEventListener('change', updatePlaylistFolderHint);
+            updatePlaylistFolderHint();
+        }
+
+        if (libraryGrid && libraryPathInput) {
+            const cards = Array.from(libraryGrid.querySelectorAll('.server-bg-card'));
+            cards.forEach((card) => {
+                card.addEventListener('click', () => {
+                    cards.forEach((item) => item.classList.remove('is-selected'));
+                    card.classList.add('is-selected');
+                    applyLibraryPreview(card);
+                });
+
+                const video = card.querySelector('video');
+                if (video) {
+                    card.addEventListener('mouseenter', () => video.play().catch(() => {}));
+                    card.addEventListener('mouseleave', () => {
+                        video.pause();
+                        video.currentTime = 0;
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('beforeunload', revokeObjectUrl);
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="rw-login-shell" aria-labelledby="login-title">
+    <form class="rw-hologlass rw-login-card" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p class="rw-section-kicker">Private studio</p>
+        <h1 id="login-title">回到 RainWave</h1>
+        <p class="muted-text mb-4">登录后管理文章、背景、留言与个人收藏。</p>
+
+        <label class="rw-form-label" for="{{ form.username.id }}">用户名</label>
+        {{ form.username(class="rw-input", autocomplete="username") }}
+        {% for error in form.username.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+
+        <label class="rw-form-label" for="{{ form.password.id }}">密码</label>
+        {{ form.password(class="rw-input", autocomplete="current-password") }}
+        {% for error in form.password.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+
+        {% if totp_required %}
+            <label class="rw-form-label" for="{{ form.totp_code.id }}">动态验证码</label>
+            {{ form.totp_code(class="rw-input", inputmode="numeric", autocomplete="one-time-code", placeholder="6 位验证码") }}
+            {% for error in form.totp_code.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+        {% endif %}
+
+        <button class="rw-primary-button" type="submit">
+            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+            安全登录
+        </button>
+    </form>
+</section>
+{% endblock %}

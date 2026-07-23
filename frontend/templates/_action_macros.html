@@ -1,0 +1,17 @@
+{#
+  这个宏用于生成“带 CSRF 的 POST 按钮”。
+  适合删除、审核通过这类动作按钮。
+#}
+{% macro post_button(action_url, text, button_class='ghost-btn', confirm_text='', next_url='') -%}
+<form action="{{ action_url }}" method="post" class="inline-form d-inline-block">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
+    <button
+        type="submit"
+        class="btn {{ button_class }}"
+        {% if confirm_text %}data-confirm="{{ confirm_text }}"{% endif %}
+    >{{ text }}</button>
+</form>
+{%- endmacro %}

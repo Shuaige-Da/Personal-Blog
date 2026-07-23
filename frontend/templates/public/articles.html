@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="rw-page rw-section-page" aria-labelledby="articles-title">
+    <header class="rw-section-header">
+        <div>
+            <p class="rw-section-kicker">Selected writing · 02</p>
+            <h1 id="articles-title" class="rw-section-title">最近写下的文字</h1>
+        </div>
+        <p class="rw-section-copy">
+            技术、生活与一点不成体系的思考。透明卡片让内容浮在背景之上，同时保留阅读层次。
+        </p>
+    </header>
+
+    <div class="rw-card-grid">
+        {% for post in blog_posts[:3] %}
+            <a
+                class="rw-hologlass rw-article-card {% if loop.first %}is-featured{% endif %}"
+                href="{{ url_for('view_blog_post', slug=post.slug) }}"
+            >
+                <div class="rw-card-content">
+                    <div class="rw-card-meta">
+                        <span>
+                            {{ (post.tags.split(',')[0] if post.tags else '随笔')|trim }}
+                            · {{ post.created_at.strftime('%Y.%m.%d') }}
+                        </span>
+                        <i class="bi {% if loop.first %}bi-arrow-up-right{% elif loop.index == 2 %}bi-soundwave{% else %}bi-code-slash{% endif %}" aria-hidden="true"></i>
+                    </div>
+                    <h2 class="rw-card-title">{{ post.title }}</h2>
+                    <p class="rw-card-description">{{ post.summary or post.content_markdown[:140] }}</p>
+                    {% if loop.first %}
+                        <div class="rw-tags">
+                            {% for tag in (post.tags or '生活,随笔').split(',')[:2] %}
+                                <span class="rw-tag">{{ tag|trim }}</span>
+                            {% endfor %}
+                            <span class="rw-tag">{{ ((post.content_markdown|length) / 500)|round(0, 'ceil')|int }} min</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </a>
+        {% else %}
+            <div class="rw-hologlass rw-empty-state">还没有公开文章。</div>
+        {% endfor %}
+    </div>
+
+    {% if pagination.pages > 1 %}
+        <nav class="rw-pagination" aria-label="文章分页">
+            {% for page_number in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                {% if page_number %}
+                    {% if page_number == pagination.page %}
+                        <span class="is-current" aria-current="page">{{ page_number }}</span>
+                    {% else %}
+                        <a href="{{ url_for('articles', page=page_number) }}">{{ page_number }}</a>
+                    {% endif %}
+                {% else %}
+                    <span aria-hidden="true">…</span>
+                {% endif %}
+            {% endfor %}
+        </nav>
+    {% endif %}
+</section>
+{% endblock %}

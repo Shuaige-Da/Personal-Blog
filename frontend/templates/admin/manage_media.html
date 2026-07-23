@@ -1,0 +1,214 @@
+{# 媒体管理通用模板。
+   音乐、图片、视频管理页都会复用它。 #}
+{% extends "base.html" %}
+{% from "_action_macros.html" import post_button %}
+
+{% block content %}
+{% set next_url = url_for(media_config.endpoint) %}
+
+<section class="glass-card p-3 p-md-4 mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-lg-8">
+            <span class="hero-chip mb-2"><i class="bi {{ media_config.icon }}"></i> Media Manager</span>
+            <h2 class="fw-bold mb-1">{{ media_config.title }}</h2>
+            <p class="muted-text mb-0">{{ media_config.description }}</p>
+        </div>
+        <div class="col-lg-4">
+            <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                <div class="stat-pill">
+                    <i class="bi {{ media_config.icon }}"></i>
+                    <div>
+                        <strong>{{ items|length }}</strong>
+                        <span>当前内容</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-4">
+        {# 左侧：上传表单和本地预览。 #}
+        <div class="glass-card p-4 h-100">
+            <h3 class="section-title mb-3"><i class="bi bi-cloud-upload me-2"></i>{{ media_config.upload_button }}</h3>
+            <form action="" method="post" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.file.label(class="form-label") }}
+                    <div class="rw-file-picker">
+                        {{ form.file(class="rw-file-picker-input", id="media-file-input") }}
+                        <label class="rw-file-picker-button" for="media-file-input">
+                            <i class="bi bi-folder2-open" aria-hidden="true"></i>
+                            <span>浏览文件</span>
+                        </label>
+                        <span class="rw-file-picker-name" id="media-file-name">尚未选择文件</span>
+                    </div>
+                    <p class="form-text mt-2 mb-0">系统会校验文件真实格式、大小和内容后再保存。</p>
+                </div>
+                <div class="preview-frame mb-3">
+                    <div id="media-preview-empty" class="empty-state">选择文件后，这里会显示本地预览。</div>
+                    <img id="media-preview-image" alt="图片预览" style="display: none;">
+                    <video id="media-preview-video" class="rw-video-player" controls style="display: none; width: 100%; height: 100%; min-height: 220px; object-fit: cover;"></video>
+                    <div id="media-preview-audio" class="p-4" style="display: none;">
+                        <p class="fw-semibold mb-3">音频预览</p>
+                        <audio controls class="w-100" id="media-preview-audio-player" data-rw-audio></audio>
+                    </div>
+                    <div class="preview-overlay">
+                        <div class="fw-semibold">{{ media_config.headline }}</div>
+                        <div class="small muted-text" id="media-preview-hint">支持上传后立即在博客对应模块展示。</div>
+                    </div>
+                </div>
+                <div class="d-grid">
+                    {{ form.submit(class="btn login-btn", value=media_config.upload_button) }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-xl-8">
+        {# 右侧：数据库里已经存在的媒体内容。 #}
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="section-title mb-1"><i class="bi {{ media_config.icon }} me-2"></i>{{ media_config.headline }}</h3>
+                    <p class="muted-text mb-0">删除后会同步从博客对应模块中消失。</p>
+                </div>
+            </div>
+
+            {% if media_config.file_type == 'image' %}
+                <div class="row g-3">
+                    {% for item in items %}
+                        <div class="col-sm-6">
+                            <div class="glass-card-soft p-3 h-100">
+                                <img
+                                    src="{{ url_for('static', filename='uploads/' + media_config.folder + '/' + item.filename) }}"
+                                    alt="{{ item.original_name }}"
+                                    class="media-thumb"
+                                    style="height: 220px;"
+                                >
+                                <div class="d-flex justify-content-between align-items-start gap-3 mt-3">
+                                    <div class="min-w-0">
+                                        <p class="fw-semibold mb-1 text-truncate">{{ item.original_name }}</p>
+                                        <p class="small muted-text mb-0">{{ item.upload_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    </div>
+                                    {{ post_button(url_for('delete_file', file_id=item.id), '删除', 'danger-btn', '确定删除这个文件吗？', next_url) }}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="col-12">
+                            <div class="empty-state glass-card-soft">{{ media_config.empty_text }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="page-grid">
+                    {% for item in items %}
+                        <div class="glass-card-soft rw-media-item p-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <p class="fw-semibold mb-1">{{ item.original_name }}</p>
+                                    <p class="small muted-text mb-0">{{ item.upload_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                                </div>
+                                {{ post_button(url_for('delete_file', file_id=item.id), '删除', 'danger-btn', '确定删除这个文件吗？', next_url) }}
+                            </div>
+
+                            {% if media_config.file_type == 'music' %}
+                                <audio controls class="w-100" data-rw-audio>
+                                    <source src="{{ url_for('static', filename='uploads/' + media_config.folder + '/' + item.filename) }}">
+                                </audio>
+                            {% else %}
+                                <video controls class="w-100 rounded-4 rw-video-player" style="max-height: 320px;">
+                                    <source src="{{ url_for('static', filename='uploads/' + media_config.folder + '/' + item.filename) }}">
+                                </video>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state glass-card-soft">{{ media_config.empty_text }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+    (() => {
+        // 这段脚本负责“选中文件后先本地预览，再决定是否上传”。
+        const input = document.getElementById('media-file-input');
+        const emptyState = document.getElementById('media-preview-empty');
+        const image = document.getElementById('media-preview-image');
+        const video = document.getElementById('media-preview-video');
+        const audioBox = document.getElementById('media-preview-audio');
+        const audio = document.getElementById('media-preview-audio-player');
+        const hint = document.getElementById('media-preview-hint');
+        const fileName = document.getElementById('media-file-name');
+        const fileType = '{{ media_config.file_type }}';
+
+        if (!input || !emptyState || !image || !video || !audioBox || !audio || !hint || !fileName) {
+            return;
+        }
+
+        let objectUrl = null;
+
+        const revokeObjectUrl = () => {
+            // 释放浏览器创建的临时预览地址。
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                objectUrl = null;
+            }
+        };
+
+        const hideAllPreview = () => {
+            // 每次切换文件前，先清空旧预览。
+            image.style.display = 'none';
+            video.style.display = 'none';
+            audioBox.style.display = 'none';
+            image.removeAttribute('src');
+            video.pause();
+            video.removeAttribute('src');
+            audio.pause();
+            audio.removeAttribute('src');
+        };
+
+        input.addEventListener('change', () => {
+            // 用户选择文件后，马上刷新预览区域。
+            revokeObjectUrl();
+            hideAllPreview();
+
+            const file = input.files && input.files[0];
+            if (!file) {
+                emptyState.style.display = 'block';
+                fileName.textContent = '尚未选择文件';
+                hint.textContent = '支持上传后立即在博客对应模块展示。';
+                return;
+            }
+
+            objectUrl = URL.createObjectURL(file);
+            emptyState.style.display = 'none';
+            fileName.textContent = file.name;
+            hint.textContent = `已选择：${file.name}`;
+
+            if (fileType === 'image') {
+                image.src = objectUrl;
+                image.style.display = 'block';
+                return;
+            }
+
+            if (fileType === 'video') {
+                video.src = objectUrl;
+                video.style.display = 'block';
+                return;
+            }
+
+            audio.src = objectUrl;
+            audioBox.style.display = 'block';
+        });
+
+        window.addEventListener('beforeunload', revokeObjectUrl);
+    })();
+</script>
+{% endblock %}

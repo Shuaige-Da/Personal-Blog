@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="rw-page rw-section-page" aria-labelledby="links-title">
+    <header class="rw-section-header">
+        <div>
+            <p class="rw-section-kicker">Life collection · 03</p>
+            <h1 id="links-title" class="rw-section-title">生活与收藏</h1>
+        </div>
+        <p class="rw-section-copy">
+            收集值得反复打开的网站、工具与灵感，让生活页不只是链接列表。
+        </p>
+    </header>
+
+    <div class="rw-links-grid">
+        {% for item in items %}
+            <a class="rw-hologlass rw-link-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+                <div class="rw-card-content">
+                    <div class="rw-card-meta">
+                        <span>收藏 · {{ item.created_at.strftime('%Y.%m.%d') }}</span>
+                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                    </div>
+                    <h2 class="rw-card-title">{{ item.title }}</h2>
+                    <p class="rw-card-description">{{ item.description }}</p>
+                    <div class="rw-tags"><span class="rw-tag">{{ item.author_name }}</span></div>
+                </div>
+            </a>
+        {% else %}
+            <div class="rw-hologlass rw-empty-state">还没有公开收藏，新的灵感会出现在这里。</div>
+        {% endfor %}
+    </div>
+
+    {% if pagination.pages > 1 %}
+        <nav class="rw-pagination" aria-label="收藏分页">
+            {% for page_number in pagination.iter_pages() %}
+                {% if page_number %}
+                    <a class="{% if page_number == pagination.page %}is-current{% endif %}" href="{{ url_for('links', page=page_number) }}">{{ page_number }}</a>
+                {% endif %}
+            {% endfor %}
+        </nav>
+    {% endif %}
+</section>
+{% endblock %}

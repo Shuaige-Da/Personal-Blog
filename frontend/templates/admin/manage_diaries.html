@@ -1,0 +1,82 @@
+{# 日记管理页：左侧新建，右侧查看和删除。 #}
+{% extends "base.html" %}
+{% from "_action_macros.html" import post_button %}
+
+{% block content %}
+{% set next_url = url_for('manage_diaries') %}
+
+<section class="glass-card p-3 p-md-4 mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-lg-8">
+            <span class="hero-chip mb-2"><i class="bi bi-journal-richtext"></i> Diary Manager</span>
+            <h2 class="fw-bold mb-1">日记管理</h2>
+            <p class="muted-text mb-0">
+                发布和整理日记内容。
+            </p>
+        </div>
+        <div class="col-lg-4">
+            <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                <div class="stat-pill">
+                    <i class="bi bi-journal-text"></i>
+                    <div>
+                        <strong>{{ diaries|length }}</strong>
+                        <span>当前日记</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-4">
+        {# 新建日记表单。 #}
+        <div class="glass-card p-4 h-100">
+            <h3 class="section-title mb-3"><i class="bi bi-pencil-square me-2"></i>发布新日记</h3>
+            <form action="" method="post">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control", placeholder="今天想记录什么？") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.content.label(class="form-label") }}
+                    {{ form.content(class="form-control", rows="10", placeholder="写下今天的心情、想法或生活片段") }}
+                </div>
+                <div class="d-grid">
+                    {{ form.submit(class="btn login-btn") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-xl-8">
+        {# 已发布日记列表。 #}
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="section-title mb-1"><i class="bi bi-book-half me-2"></i>日记列表</h3>
+                    <p class="muted-text mb-0">这里展示已经发布的全部日记。</p>
+                </div>
+            </div>
+
+            <div class="page-grid">
+                {% for diary in diaries %}
+                    <article class="glass-card-soft p-4">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-2">
+                            <div>
+                                <h5 class="mb-1">{{ diary.title }}</h5>
+                                <p class="small muted-text mb-0">{{ diary.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            </div>
+                            {{ post_button(url_for('delete_diary', entry_id=diary.id), '删除', 'danger-btn', '确定删除这篇日记吗？', next_url) }}
+                        </div>
+                        <p class="mb-0" style="white-space: pre-wrap;">{{ diary.content }}</p>
+                    </article>
+                {% else %}
+                    <div class="empty-state glass-card-soft">还没有发布日记，先在左侧写下第一篇吧。</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

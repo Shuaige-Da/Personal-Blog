@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="rw-page rw-home" aria-labelledby="home-title">
+    <div
+        class="rw-hero"
+        style="
+            --hero-title-color: {{ homepage_hero.title_color }};
+            --hero-title-font: {{ homepage_hero.title_font_family }};
+            --hero-description-color: {{ homepage_hero.description_color }};
+            --hero-description-font: {{ homepage_hero.description_font_family }};
+        "
+    >
+        <div class="rw-eyebrow">
+            <i class="bi bi-stars" aria-hidden="true"></i>
+            <span>RainWave Personal Blog</span>
+        </div>
+        <h1 id="home-title" class="rw-hero-title">
+            {% if '，' in homepage_hero.title %}
+                {{ homepage_hero.title.split('，', 1)[0] }}，<br>{{ homepage_hero.title.split('，', 1)[1] }}
+            {% else %}
+                {{ homepage_hero.title }}
+            {% endif %}
+        </h1>
+        <p class="rw-hero-description">{{ homepage_hero.description }}</p>
+        <div class="rw-hero-actions">
+            <a class="rw-primary-button" href="{{ url_for('articles') }}">
+                <i class="bi bi-stars" aria-hidden="true"></i>
+                浏览文章
+            </a>
+            <a class="rw-text-link" href="{{ url_for('messages') }}">
+                进入留言
+                <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="rw-recent-strip" aria-label="最近文章">
+        {% if recent_posts %}
+            {% for post in recent_posts %}
+                <a href="{{ url_for('view_blog_post', slug=post.slug) }}">
+                    <strong>{{ post.title }}</strong>
+                    <small>阅读 {{ ((post.content_markdown|length) / 500)|round(0, 'ceil')|int }} 分钟</small>
+                </a>
+                {% if not loop.last %}<span class="rw-recent-divider" aria-hidden="true"></span>{% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="rw-recent-empty">文字正在路上，先听一会儿夜色。</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
