@@ -9,7 +9,18 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/rainwave.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rainwave.css', v=static_asset_version) }}">
+    <script nonce="{{ csp_nonce }}">
+        try {
+            document.documentElement.dataset.pageDirection =
+                sessionStorage.getItem('rw-page-direction') || 'initial';
+            sessionStorage.removeItem('rw-page-direction');
+        } catch (error) {
+            document.documentElement.dataset.pageDirection = 'initial';
+        }
+        document.documentElement.dataset.pageAxis =
+            {{ (page_transition.axis if page_transition else 'vertical')|tojson }};
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 {% set public_endpoints = ['index', 'articles', 'links', 'messages'] %}
@@ -26,10 +37,13 @@
     {% endif %}
 {% endfor %}
 {% set next_item = nav_items[(nav_state.active + 1) % (nav_items|length)] %}
+{% set previous_item = nav_items[(nav_state.active - 1) % (nav_items|length)] %}
 {% set is_admin_page = current_user.is_authenticated and current_user.is_admin and current_endpoint not in public_endpoints and current_endpoint != 'view_blog_post' %}
 <body
     class="rw-body {% if current_endpoint in public_endpoints or current_endpoint == 'view_blog_post' %}rw-immersive{% else %}rw-admin-mode{% endif %}{% if current_endpoint == 'index' and clock_settings %} rw-has-standalone-clock{% endif %}"
     data-endpoint="{{ current_endpoint or '' }}"
+    data-page-axis="{{ page_transition.axis if page_transition else 'vertical' }}"
+    data-page-index="{{ nav_state.active }}"
 >
     <a class="rw-skip-link" href="#main-content">跳到主要内容</a>
 
@@ -49,7 +63,13 @@
                         <source src="{{ background.url }}" type="{{ background.mime_type or 'video/mp4' }}">
                     </video>
                 {% else %}
-                    <img src="{{ background.url }}" alt="" fetchpriority="{% if loop.first %}high{% else %}low{% endif %}">
+                    <img
+                        src="{{ background.url }}"
+                        alt=""
+                        fetchpriority="{% if loop.first %}high{% else %}low{% endif %}"
+                        loading="{% if loop.first %}eager{% else %}lazy{% endif %}"
+                        decoding="async"
+                    >
                 {% endif %}
             </div>
         {% endfor %}
@@ -59,12 +79,13 @@
 
     <div class="rw-app">
         <header class="rw-topbar {% if is_admin_page %}rw-admin-topbar{% endif %}">
-            <a class="rw-brand" href="{{ url_for('index') }}" aria-label="RainWave 首页">RAINWAVE</a>
+            <a class="rw-brand" href="{{ url_for('index') }}" data-page-target-index="0" aria-label="RainWave 首页">RAINWAVE</a>
 
             <nav class="rw-desktop-nav" aria-label="主要导航">
                 {% for endpoint, label, number in nav_items %}
                     <a
                         href="{{ url_for(endpoint) }}"
+                        data-page-target-index="{{ loop.index0 }}"
                         class="{% if loop.index0 == nav_state.active %}is-active{% endif %}"
                         {% if loop.index0 == nav_state.active %}aria-current="page"{% endif %}
                     >{{ label }}</a>
@@ -160,9 +181,10 @@
 
         {% if current_endpoint in public_endpoints or current_endpoint == 'view_blog_post' %}
             <nav class="rw-page-index" aria-label="页面索引">
-                {% for endpoint, label, number in nav_items[:3] %}
+                {% for endpoint, label, number in nav_items %}
                     <a
                         href="{{ url_for(endpoint) }}"
+                        data-page-target-index="{{ loop.index0 }}"
                         class="{% if loop.index0 == nav_state.active %}is-active{% endif %}"
                     >
                         <em>{{ number }}</em>
@@ -171,15 +193,15 @@
                 {% endfor %}
             </nav>
 
-            <a class="rw-turn-edge" href="{{ url_for(next_item[0]) }}" data-page-next aria-label="翻到{{ next_item[1] }}">
-                <span>向下翻页</span>
-                <i class="bi bi-chevron-double-down" aria-hidden="true"></i>
-            </a>
+            {# 翻页地址仅供滚轮、键盘和触摸逻辑使用，不再显示边缘提示胶囊。 #}
+            <a href="{{ url_for(previous_item[0]) }}" data-page-prev hidden aria-hidden="true" tabindex="-1"></a>
+            <a href="{{ url_for(next_item[0]) }}" data-page-next hidden aria-hidden="true" tabindex="-1"></a>
 
             <nav class="rw-mobile-nav" aria-label="移动端主要导航">
                 {% for endpoint, label, number in nav_items %}
                     <a
                         href="{{ url_for(endpoint) }}"
+                        data-page-target-index="{{ loop.index0 }}"
                         class="{% if loop.index0 == nav_state.active %}is-active{% endif %}"
                     >{{ label }}</a>
                 {% endfor %}
@@ -188,7 +210,7 @@
     </div>
 
     <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
-    <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/rainwave.js') }}"></script>
+    <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/rainwave.js', v=static_asset_version) }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

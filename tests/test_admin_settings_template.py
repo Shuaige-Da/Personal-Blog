@@ -29,6 +29,16 @@ class AdminSettingsTemplateTests(unittest.TestCase):
         self.assertNotIn("使用选中的服务器背景", template)
         self.assertNotIn("background_library_submit", template)
 
+    def test_homepage_font_and_color_controls_use_stable_grid(self):
+        template = TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn("homepage-settings-form", template)
+        self.assertIn("homepage-style-grid", template)
+        self.assertIn("grid-template-columns: minmax(0, 1fr) minmax(150px, 0.34fr);", template)
+        self.assertIn(".homepage-font-field .rw-select-shell", template)
+        self.assertIn(".settings-detail-column #section-homepage:not([hidden])", template)
+        self.assertIn("height: auto;", template)
+
 
 if __name__ == "__main__":
     unittest.main()

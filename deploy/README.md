@@ -16,8 +16,23 @@
 /var/www/rainwave-current                 当前版本软链接
 /var/www/rainwave-releases/<release>      不可变代码与独立虚拟环境
 /var/www/rainwave-shared/uploads          持久化用户上传内容
+/var/www/rainwave-shared/hermes-attachments  Agent 私有附件（不能由 Nginx 公开）
 /etc/rainwave/rainwave.env                仅服务器保存的生产密钥
 /run/rainwave/gunicorn.sock               Nginx 与 Gunicorn 的本地套接字
 ```
+
+音频上传依赖 `ffmpeg` 和 `ffprobe`。Debian/Ubuntu 可执行
+`sudo apt install ffmpeg`，部署前用 `ffmpeg -version`、`ffprobe -version`
+确认二者可用。创建共享目录后，将上传目录和 Agent 附件目录都授权给
+`www-data`，并在生产环境文件中设置 `HERMES_ATTACHMENT_FOLDER`。
+
+首次升级前先备份数据库和 `/var/www/rainwave-shared/uploads`。应用启动会通过
+现有 `db.create_all()` 创建 `audio_playback_variant` 与 `hermes_attachment` 表；
+随后在当前版本虚拟环境中执行 `flask --app backend.core.app:create_app
+backfill-audio-variants`，为旧音频生成无损 WAV 副本。
+
+Nginx 的静态文件模块默认支持 Range 请求。上线后应分别对原音频和 WAV 执行
+`curl -I -H "Range: bytes=0-1023" <URL>`，确认响应为 `206 Partial Content`。
+流式 Agent 接口单独关闭了代理缓冲，其余页面继续使用常规代理设置。
 
 不要在未验证 SSH 公钥登录前应用 SSH 加固配置，也不要把 `.env`、数据库或上传内容提交到 Git。

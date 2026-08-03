@@ -47,9 +47,11 @@ from backend.core.constants import (
     DEFAULT_HOMEPAGE_INTRO_DESCRIPTION,
     DEFAULT_HOMEPAGE_TITLE_COLOR,
     DEFAULT_HOMEPAGE_TITLE_FONT,
+    DEFAULT_PAGE_TRANSITION_AXIS,
     HOMEPAGE_FONT_FAMILIES,
     LEGACY_DEFAULT_BACKGROUND_ASSET,
     MAX_UPLOAD_BASENAME_LENGTH,
+    PAGE_TRANSITION_AXIS_CHOICES,
 )
 from backend.core.forms import (
     BackgroundForm,
@@ -57,6 +59,7 @@ from backend.core.forms import (
     ClockSettingsForm,
     HomepageDescriptionForm,
     HomepageTitleForm,
+    PageTransitionSettingsForm,
 )
 from backend.core.models import Message, SiteSetting, User, db
 
@@ -91,6 +94,9 @@ HOMEPAGE_HERO_SETTING_DEFAULTS = {
     'homepage_intro_description': DEFAULT_HOMEPAGE_INTRO_DESCRIPTION,
     'homepage_intro_description_font': DEFAULT_HOMEPAGE_DESCRIPTION_FONT,
     'homepage_intro_description_color': DEFAULT_HOMEPAGE_DESCRIPTION_COLOR,
+}
+PAGE_TRANSITION_SETTING_DEFAULTS = {
+    'page_transition_axis': DEFAULT_PAGE_TRANSITION_AXIS,
 }
 
 
@@ -136,11 +142,22 @@ def set_setting(key, value):
 
 
 def update_settings(settings):
-    """Batch update multiple site settings without committing yet."""
-    # 这里只是统一塞进 session，不在这里 commit，
-    # 这样调用方可以控制什么时候真正保存。
+    """Batch update site settings with one lookup and no implicit commit."""
+    if not settings:
+        return
+
+    stored_settings = {
+        setting.key: setting
+        for setting in SiteSetting.query.filter(SiteSetting.key.in_(settings)).all()
+    }
+    cache = g.setdefault('_site_setting_cache', {})
     for key, value in settings.items():
-        set_setting(key, value)
+        setting = stored_settings.get(key)
+        if setting is None:
+            db.session.add(SiteSetting(key=key, value=value))
+        else:
+            setting.value = value
+        cache[key] = value
 
 
 def parse_json_setting(key, default_value):
@@ -512,6 +529,15 @@ def get_homepage_hero_settings():
     }
 
 
+def get_page_transition_settings():
+    """Return the validated public-page transition configuration."""
+    values = get_settings(PAGE_TRANSITION_SETTING_DEFAULTS)
+    axis = values['page_transition_axis']
+    if axis not in PAGE_TRANSITION_AXIS_CHOICES:
+        axis = DEFAULT_PAGE_TRANSITION_AXIS
+    return {'axis': axis}
+
+
 def get_background_asset(setting_key):
     """Build the background asset payload consumed by templates."""
     get_settings(build_background_setting_defaults(setting_key))
@@ -568,7 +594,10 @@ def render_with_background(template_name, background_setting_key, **context):
     """Render a template with the current background and clock context."""
     # 这是全站很重要的复用函数：
     # 它会把背景资源和时间组件设置一起塞给模板。
-    render_defaults = build_background_setting_defaults(background_setting_key)
+    render_defaults = {
+        **build_background_setting_defaults(background_setting_key),
+        **PAGE_TRANSITION_SETTING_DEFAULTS,
+    }
     show_clock = request.endpoint in {'index', 'blog'}
     if show_clock:
         render_defaults.update(CLOCK_SETTING_DEFAULTS)
@@ -581,6 +610,7 @@ def render_with_background(template_name, background_setting_key, **context):
         background_asset=active_background,
         clock_settings=get_clock_settings() if show_clock else None,
         current_endpoint=request.endpoint,
+        page_transition=get_page_transition_settings(),
         **context,
     )
 
@@ -686,7 +716,11 @@ def build_background_setting_defaults(setting_key):
 
 def build_default_settings():
     """Collect the complete initial setting set for a fresh database."""
-    settings = {**CLOCK_SETTING_DEFAULTS, **HOMEPAGE_HERO_SETTING_DEFAULTS}
+    settings = {
+        **CLOCK_SETTING_DEFAULTS,
+        **HOMEPAGE_HERO_SETTING_DEFAULTS,
+        **PAGE_TRANSITION_SETTING_DEFAULTS,
+    }
     for setting_key in BACKGROUND_SETTING_KEYS:
         settings.update(build_background_setting_defaults(setting_key))
     return settings
@@ -736,14 +770,21 @@ def validate_choice(value, valid_choices, flash_message):
     return False
 
 
-def populate_admin_forms(clock_settings_form, homepage_title_form, homepage_description_form):
+def populate_admin_forms(
+    clock_settings_form,
+    page_transition_form,
+    homepage_title_form,
+    homepage_description_form,
+):
     """Populate admin settings forms with the current stored values."""
     # GET 打开设置页时，把数据库当前值回填到表单中。
     current_clock_settings = get_clock_settings()
     homepage_hero_settings = get_homepage_hero_settings()
+    page_transition_settings = get_page_transition_settings()
     clock_settings_form.style.data = current_clock_settings['style']
     clock_settings_form.hour_cycle.data = current_clock_settings['hour_cycle']
     clock_settings_form.show_date.data = '1' if current_clock_settings['show_date'] else '0'
+    page_transition_form.axis.data = page_transition_settings['axis']
     homepage_title_form.title.data = homepage_hero_settings['title']
     homepage_title_form.title_font.data = homepage_hero_settings['title_font']
     homepage_title_form.title_color.data = homepage_hero_settings['title_color']
@@ -842,6 +883,26 @@ def handle_clock_settings_form(clock_settings_form):
     )
     db.session.commit()
     flash('顶部时间组件设置已更新。')
+    return redirect(url_for('admin'))
+
+
+def handle_page_transition_form(page_transition_form):
+    """Validate and save the public-page navigation axis."""
+    if not page_transition_form.validate():
+        flash('翻页方向设置提交失败，请重新选择。')
+        return redirect(url_for('admin'))
+
+    selected_axis = page_transition_form.axis.data
+    if not validate_choice(
+        selected_axis,
+        PAGE_TRANSITION_AXIS_CHOICES,
+        '无效的翻页方向。',
+    ):
+        return redirect(url_for('admin'))
+
+    set_setting('page_transition_axis', selected_axis)
+    db.session.commit()
+    flash('前台翻页方向已更新。')
     return redirect(url_for('admin'))
 
 
@@ -980,6 +1041,7 @@ def register_admin_settings_routes(app):
         background_form = BackgroundForm(prefix='background-single')
         background_playlist_form = BackgroundPlaylistForm(prefix='background-playlist')
         clock_settings_form = ClockSettingsForm(prefix='site-clock')
+        page_transition_form = PageTransitionSettingsForm(prefix='page-transition')
         homepage_title_form = HomepageTitleForm(prefix='homepage-title')
         homepage_description_form = HomepageDescriptionForm(prefix='homepage-description')
 
@@ -987,6 +1049,7 @@ def register_admin_settings_routes(app):
             get_settings(build_default_settings())
             populate_admin_forms(
                 clock_settings_form,
+                page_transition_form,
                 homepage_title_form,
                 homepage_description_form,
             )
@@ -995,6 +1058,8 @@ def register_admin_settings_routes(app):
             return handle_background_playlist_form(background_playlist_form)
         if is_submitted(clock_settings_form):
             return handle_clock_settings_form(clock_settings_form)
+        if is_submitted(page_transition_form):
+            return handle_page_transition_form(page_transition_form)
         if is_submitted(homepage_title_form):
             return handle_homepage_title_form(homepage_title_form)
         if is_submitted(homepage_description_form):
@@ -1011,6 +1076,7 @@ def register_admin_settings_routes(app):
             background_form=background_form,
             background_playlist_form=background_playlist_form,
             clock_settings_form=clock_settings_form,
+            page_transition_form=page_transition_form,
             homepage_title_form=homepage_title_form,
             homepage_description_form=homepage_description_form,
             messages=get_ordered_entries(Message, Message.created_at),

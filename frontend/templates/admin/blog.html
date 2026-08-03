@@ -24,35 +24,35 @@
                 <div class="stat-pill">
                     <i class="bi bi-file-earmark-text"></i>
                     <div>
-                        <strong>{{ blog_posts|length if blog_posts else 0 }}</strong>
+                        <strong>{{ blog_count }}</strong>
                         <span>博客</span>
                     </div>
                 </div>
                 <div class="stat-pill">
                     <i class="bi bi-journal-text"></i>
                     <div>
-                        <strong>{{ diaries|length }}</strong>
+                        <strong>{{ diary_count }}</strong>
                         <span>日记</span>
                     </div>
                 </div>
                 <div class="stat-pill">
                     <i class="bi bi-headphones"></i>
                     <div>
-                        <strong>{{ music|length }}</strong>
+                        <strong>{{ music_count }}</strong>
                         <span>音乐</span>
                     </div>
                 </div>
                 <div class="stat-pill">
                     <i class="bi bi-images"></i>
                     <div>
-                        <strong>{{ images|length }}</strong>
+                        <strong>{{ image_count }}</strong>
                         <span>图片</span>
                     </div>
                 </div>
                 <div class="stat-pill">
                     <i class="bi bi-film"></i>
                     <div>
-                        <strong>{{ videos|length }}</strong>
+                        <strong>{{ video_count }}</strong>
                         <span>视频</span>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                 <a class="btn ghost-btn" href="{{ url_for('manage_blog') }}">管理博客</a>
             </div>
             <div class="page-grid">
-                {% for post in blog_posts[:3] if blog_posts %}
+                {% for post in blog_posts if blog_posts %}
                     <article class="glass-card-soft p-4">
                         <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
                             <h5 class="mb-0">
@@ -134,7 +134,7 @@
     </div>
 </section>
 
-<section class="row g-4">
+<section class="row g-4 rw-dashboard-deferred">
     <div class="col-xl-7">
         {# 日记列表。 #}
         <div class="glass-card p-4 h-100">
@@ -175,8 +175,18 @@
                 {% for item in music %}
                     <div class="glass-card-soft rw-media-item p-3">
                         <p class="mb-2 fw-semibold">{{ item.original_name }}</p>
-                        <audio controls class="w-100" data-rw-audio>
-                            <source src="{{ url_for('static', filename='uploads/music/' + item.filename) }}">
+                        <audio
+                            controls
+                            class="w-100"
+                            preload="none"
+                            data-rw-audio
+                            data-audio-original-available="{{ 'true' if item.audio_source_available else 'false' }}"
+                            data-audio-fallback-available="{{ 'true' if item.audio_fallback_available else 'false' }}"
+                        >
+                            <source src="{{ url_for('static', filename='uploads/music/' + item.filename) }}" type="{{ item.audio_variant.source_mime_type if item.audio_variant else 'application/octet-stream' }}" data-audio-original>
+                            {% if item.audio_variant %}
+                                <source src="{{ url_for('static', filename='uploads/music/' + item.audio_variant.filename) }}" type="audio/wav" data-audio-fallback>
+                            {% endif %}
                         </audio>
                     </div>
                 {% else %}
@@ -187,7 +197,7 @@
     </div>
 </section>
 
-<section class="row g-4 mt-1">
+<section class="row g-4 mt-1 rw-dashboard-deferred">
     <div class="col-xl-6">
         {# 图片缩略图展示区。 #}
         <div class="glass-card p-4 h-100">
@@ -206,6 +216,8 @@
                                 src="{{ url_for('static', filename='uploads/images/' + image.filename) }}"
                                 alt="{{ image.original_name }}"
                                 class="media-thumb"
+                                loading="lazy"
+                                decoding="async"
                                 style="height: 220px;"
                             >
                             <p class="small muted-text mb-0 mt-2 px-1 text-truncate">{{ image.original_name }}</p>
@@ -234,7 +246,7 @@
                 {% for video in videos %}
                     <div class="glass-card-soft p-3">
                         <p class="mb-2 fw-semibold">{{ video.original_name }}</p>
-                        <video controls class="w-100 rounded-4 rw-video-player" style="max-height: 320px;">
+                        <video controls preload="none" class="w-100 rounded-4 rw-video-player" style="max-height: 320px;">
                             <source src="{{ url_for('static', filename='uploads/videos/' + video.filename) }}">
                         </video>
                     </div>

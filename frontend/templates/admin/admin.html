@@ -74,6 +74,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link settings-nav-link" href="#section-page-transition" data-settings-panel="section-page-transition">
+                        <i class="bi bi-arrow-down-up me-2"></i>前台翻页方向
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link settings-nav-link" href="#section-homepage" data-settings-panel="section-homepage">
                         <i class="bi bi-chat-square-heart me-2"></i>首页个性描述
                     </a>
@@ -174,7 +179,7 @@
                                     >
                                         <span class="server-bg-thumb">
                                             {% if asset.kind == 'video' %}
-                                                <video src="{{ asset.url }}" muted loop playsinline preload="metadata"></video>
+                                                <video src="{{ asset.url }}" muted loop playsinline preload="none"></video>
                                                 <span class="server-bg-kind"><i class="bi bi-play-fill"></i> 视频</span>
                                             {% else %}
                                                 <img src="{{ asset.url }}" alt="{{ asset.name }}" loading="lazy">
@@ -278,25 +283,44 @@
             </form>
         </div>
 
+        {# ---- 前台翻页方向 ---- #}
+        <div id="section-page-transition" class="glass-card p-4 mb-4 settings-panel" hidden>
+            <h5 class="section-title fw-bold mb-1"><i class="bi bi-arrow-down-up me-2"></i>前台翻页方向</h5>
+            <p class="small muted-text mb-3">控制首页、文章、生活和留言四个页面的动画、键盘与触摸手势方向。鼠标滚轮始终支持上下翻页。</p>
+            <form action="" method="post">
+                {{ page_transition_form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ page_transition_form.axis.label(class="form-label") }}
+                    {{ page_transition_form.axis(class="form-select") }}
+                </div>
+                <div class="glass-card-soft p-3 mb-3 small muted-text">
+                    纵向模式与滚轮方向一致；横向模式保留原有的左右翻页视觉。两种模式都支持上一页、下一页和首尾循环。
+                </div>
+                <div class="d-grid">
+                    {{ page_transition_form.submit(class="btn ghost-btn") }}
+                </div>
+            </form>
+        </div>
+
         {# ---- 首页个性描述 ---- #}
         <div id="section-homepage" class="glass-card p-4 mb-4 settings-panel" hidden>
             <h5 class="section-title fw-bold mb-1"><i class="bi bi-chat-square-heart me-2"></i>首页个性描述</h5>
             <p class="small muted-text mb-3">修改首页欢迎语和个性描述文案，会立即影响首页展示。</p>
 
-            <form action="" method="post" class="mb-4">
+            <form action="" method="post" class="homepage-settings-form mb-4">
                 {{ homepage_title_form.hidden_tag() }}
-                <div class="setting-split mb-3">
+                <div class="setting-split">
                     <div class="fw-semibold mb-2">欢迎语设置</div>
                     <div class="mb-3">
                         {{ homepage_title_form.title.label(class="form-label") }}
                         {{ homepage_title_form.title(class="form-control", placeholder="例如：欢迎来到 RainWave 的博客") }}
                     </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-8">
+                    <div class="homepage-style-grid mb-3">
+                        <div class="homepage-style-field homepage-font-field">
                             {{ homepage_title_form.title_font.label(class="form-label") }}
                             {{ homepage_title_form.title_font(class="form-select") }}
                         </div>
-                        <div class="col-md-4">
+                        <div class="homepage-style-field homepage-color-field">
                             {{ homepage_title_form.title_color.label(class="form-label") }}
                             {{ homepage_title_form.title_color(class="form-control form-control-color") }}
                         </div>
@@ -307,9 +331,9 @@
                 </div>
             </form>
 
-            <form action="" method="post">
+            <form action="" method="post" class="homepage-settings-form">
                 {{ homepage_description_form.hidden_tag() }}
-                <div class="setting-split mb-3">
+                <div class="setting-split">
                     <div class="fw-semibold mb-2">个性描述设置</div>
                     <div class="mb-3">
                         {{ homepage_description_form.description.label(class="form-label") }}
@@ -321,12 +345,12 @@
                             这段文字会显示在首页欢迎标题下方，适合写博客气质、记录方向或一句简短的自我介绍。
                         </div>
                     </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-8">
+                    <div class="homepage-style-grid mb-3">
+                        <div class="homepage-style-field homepage-font-field">
                             {{ homepage_description_form.description_font.label(class="form-label") }}
                             {{ homepage_description_form.description_font(class="form-select") }}
                         </div>
-                        <div class="col-md-4">
+                        <div class="homepage-style-field homepage-color-field">
                             {{ homepage_description_form.description_color.label(class="form-label") }}
                             {{ homepage_description_form.description_color(class="form-control form-control-color") }}
                         </div>
@@ -485,6 +509,36 @@
         overflow-y: auto;
     }
 
+    .homepage-settings-form {
+        padding: 1rem;
+        border: 1px solid rgba(205, 232, 255, 0.16);
+        border-radius: 18px;
+        background: rgba(5, 20, 38, 0.18);
+    }
+
+    .settings-detail-column #section-homepage:not([hidden]) {
+        height: auto;
+        min-height: 720px;
+        overflow: visible;
+    }
+
+    .homepage-style-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(150px, 0.34fr);
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .homepage-style-field,
+    .homepage-font-field .rw-select-shell {
+        min-width: 0;
+    }
+
+    .homepage-color-field input[type="color"] {
+        width: 100%;
+        min-width: 0;
+    }
+
     #section-single-bg:not([hidden]) {
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
@@ -619,6 +673,10 @@
 
     @media (max-width: 767.98px) {
         .message-review-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .homepage-style-grid {
             grid-template-columns: 1fr;
         }
     }

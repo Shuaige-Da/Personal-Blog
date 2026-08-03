@@ -55,6 +55,11 @@ CLOCK_SHOW_DATE_FIELD_CHOICES = [
     ('0', '隐藏日期'),
 ]
 
+PAGE_TRANSITION_AXIS_FIELD_CHOICES = [
+    ('vertical', '纵向翻页（上下）'),
+    ('horizontal', '横向翻页（左右）'),
+]
+
 
 class LoginForm(FlaskForm):
     """管理员登录表单。"""
@@ -133,6 +138,17 @@ class ClockSettingsForm(FlaskForm):
         validators=[DataRequired()],
     )
     submit = SubmitField('更新时间样式')
+
+
+class PageTransitionSettingsForm(FlaskForm):
+    """前台沉浸式页面翻页方向设置表单。"""
+
+    axis = SelectField(
+        '翻页方向',
+        choices=PAGE_TRANSITION_AXIS_FIELD_CHOICES,
+        validators=[DataRequired()],
+    )
+    submit = SubmitField('更新翻页方向')
 
 
 class HomepageTitleForm(FlaskForm):

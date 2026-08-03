@@ -58,6 +58,69 @@ class AdminUiTests(unittest.TestCase):
                 response = self.client.get(route)
                 self.assertEqual(response.status_code, 200)
 
+    def test_chat_template_contains_only_the_streaming_client(self):
+        page = self.client.get('/chat').get_data(as_text=True)
+
+        self.assertEqual(page.count('/api/hermes/chat/stream'), 1)
+        self.assertNotIn('RainWaveHermesEnhanced', page)
+        self.assertNotIn('pollChatJob', page)
+
+    def test_chat_keeps_composer_editable_and_respects_reader_scroll(self):
+        page = self.client.get('/chat').get_data(as_text=True)
+
+        self.assertNotIn('inputArea.disabled = busy', page)
+        self.assertIn("content.textContent = '正在思考'", page)
+        self.assertIn('if (!followLatest) return', page)
+        self.assertIn('id="chat-jump-latest"', page)
+
+    def test_blog_editor_exposes_full_writing_agent_with_attachments(self):
+        page = self.client.get('/manage/blog/new').get_data(as_text=True)
+
+        self.assertIn('id="writing-agent-workspace"', page)
+        self.assertIn('id="writing-agent-drag-handle"', page)
+        self.assertIn('id="writing-agent-surface"', page)
+        self.assertNotIn('id="writing-agent-resize-handle"', page)
+        self.assertIn('id="writing-copy-latest"', page)
+        self.assertIn('id="writing-insert-latest"', page)
+        self.assertIn('id="writing-insert-target"', page)
+        self.assertIn('--writing-select-width: 132px', page)
+        self.assertIn('width: calc(var(--writing-select-width) / 2)', page)
+        self.assertIn('background: rgba(4, 17, 34, 0.32)', page)
+        self.assertIn('<option value="content">文章正文</option>', page)
+        self.assertIn('<option value="summary">文章摘要</option>', page)
+        self.assertIn('<option value="tags">标签</option>', page)
+        self.assertIn('id="writing-attachment-input"', page)
+        self.assertIn('multiple hidden', page)
+        self.assertIn("formData.set('context', context.text)", page)
+        self.assertEqual(page.count("fetch('/api/hermes/chat/stream'"), 1)
+        self.assertNotIn('agentInput.disabled = busy', page)
+        self.assertIn('pointer-events: none;', page)
+        self.assertIn('pointer-events: auto;', page)
+        self.assertIn('aria-modal="false"', page)
+        self.assertNotIn("document.body.style.overflow = 'hidden'", page)
+        self.assertIn('document.body.append(fab, panel, backdrop)', page)
+        self.assertIn("fab.addEventListener('pointerdown'", page)
+        self.assertIn('positionPanelNearFab', page)
+        self.assertIn('runWorkspaceAction(button.dataset.workspaceAction)', page)
+        self.assertIn('workspaceResizeEdges', page)
+        self.assertIn("messages.addEventListener('wheel'", page)
+        self.assertIn('event.stopPropagation()', page)
+        self.assertIn('--writing-workspace-scale', page)
+        self.assertIn('backdrop-filter: blur(4px) saturate(122%)', page)
+        self.assertNotIn('backdrop-filter: blur(30px)', page)
+        self.assertIn('data-article-key="new"', page)
+        self.assertIn('rainwave-writing-agent:', page)
+        self.assertIn('persistWritingHistory', page)
+        self.assertIn('restoreWritingHistory', page)
+        self.assertIn('历史自动保存', page)
+        self.assertIn("showInsertionStatus('已插入文章正文，工作台保持打开。')", page)
+        self.assertIn("showInsertionStatus('已写入文章摘要，工作台保持打开。')", page)
+        self.assertIn("showInsertionStatus('已追加到文章标签，工作台保持打开。')", page)
+        self.assertIn('class="glass-card rw-editor-hero', page)
+        self.assertIn("{{ '更新文章' if post else '保存文章' }}", Path(
+            'frontend/templates/admin/edit_blog_post.html'
+        ).read_text(encoding='utf-8'))
+
     def test_admin_header_exposes_primary_actions_and_logout(self):
         response = self.client.get('/admin')
         page = response.get_data(as_text=True)
@@ -87,6 +150,8 @@ class AdminUiTests(unittest.TestCase):
         page = self.client.get('/').get_data(as_text=True)
         self.assertNotIn('data-background-choice', page)
         self.assertNotIn('rw-background-switcher', page)
+        self.assertRegex(page, r'/static/css/rainwave\.css\?v=\d+')
+        self.assertRegex(page, r'/static/js/rainwave\.js\?v=\d+')
 
     def test_public_article_restores_table_of_contents(self):
         post = BlogPost(
@@ -107,6 +172,15 @@ class AdminUiTests(unittest.TestCase):
         self.assertIn('data-toc-list', page)
         self.assertIn('data-article-content', page)
         self.assertNotIn('data-site-clock', page)
+
+        css = Path('frontend/static/css/rainwave.css').read_text(encoding='utf-8')
+        javascript = Path('frontend/static/js/rainwave.js').read_text(encoding='utf-8')
+        self.assertIn('body.rw-immersive[data-endpoint="view_blog_post"]', css)
+        self.assertIn('body[data-endpoint="view_blog_post"] .rw-article-shell', css)
+        self.assertIn('overflow: visible;', css)
+        self.assertIn("['index', 'articles', 'links', 'messages'].includes(endpoint)", javascript)
+        self.assertNotIn("['index', 'articles', 'links', 'messages', 'view_blog_post']", javascript)
+        self.assertIn('root: null,', javascript)
 
     def test_background_playlist_renders_as_automatic_layers(self):
         background_dir = Path(self.upload_dir.name) / 'backgrounds'
@@ -138,9 +212,37 @@ class AdminUiTests(unittest.TestCase):
         self.assertIn('尚未选择文件', page)
 
     def test_music_page_exposes_themeable_audio_sources(self):
+        music_dir = Path(self.upload_dir.name) / 'music'
+        music_dir.mkdir(parents=True, exist_ok=True)
+        (music_dir / 'available.flac').write_bytes(b'fLaC-test')
+        db.session.add_all(
+            [
+                FileRecord(
+                    filename='available.flac',
+                    original_name='available.flac',
+                    file_type='music',
+                    user_id=self.admin.id,
+                ),
+                FileRecord(
+                    filename='missing.mp3',
+                    original_name='missing.mp3',
+                    file_type='music',
+                    user_id=self.admin.id,
+                ),
+            ]
+        )
+        db.session.commit()
+
         page = self.client.get('/manage/music').get_data(as_text=True)
         self.assertIn('data-rw-audio', page)
         self.assertIn('media-preview-audio-player', page)
+        self.assertIn('data-audio-original-available="true"', page)
+        self.assertIn('data-audio-original-available="false"', page)
+
+        script = Path('frontend/static/js/rainwave.js').read_text(encoding='utf-8')
+        self.assertIn("error?.name === 'AbortError'", script)
+        self.assertIn('原音频文件不存在，请重新上传或删除此记录。', script)
+        self.assertNotIn('无法播放：${error.message', script)
 
     def test_image_upload_button_persists_a_valid_file(self):
         image_stream = io.BytesIO()
@@ -173,6 +275,62 @@ class AdminUiTests(unittest.TestCase):
         self.assertEqual(get_setting('site_clock_style'), 'text')
         self.assertEqual(get_setting('site_clock_hour_cycle'), '12')
         self.assertEqual(get_setting('site_clock_show_date'), '0')
+
+    def test_public_pages_default_to_vertical_circular_navigation(self):
+        home = self.client.get('/').get_data(as_text=True)
+        messages = self.client.get('/messages').get_data(as_text=True)
+
+        self.assertIn('data-page-axis="vertical"', home)
+        self.assertIn('data-page-prev', home)
+        self.assertIn('href="/messages" data-page-prev', home)
+        self.assertIn('href="/" data-page-next', messages)
+        self.assertNotIn('rw-turn-edge', home)
+        self.assertNotIn('rw-turn-edge', messages)
+        self.assertIn('data-page-index="0"', home)
+        self.assertIn('data-page-target-index="3"', home)
+
+    def test_vertical_and_horizontal_navigation_use_distinct_full_page_motion(self):
+        stylesheet = Path('frontend/static/css/rainwave.css').read_text(encoding='utf-8')
+        script = Path('frontend/static/js/rainwave.js').read_text(encoding='utf-8')
+
+        self.assertIn('translate3d(0, 30vh, 0)', stylesheet)
+        self.assertIn('translate3d(30vw, 0, 0)', stylesheet)
+        self.assertIn('.rw-immersive.rw-is-page-leaving .rw-app', stylesheet)
+        self.assertIn("body.classList.add('rw-is-page-leaving')", script)
+        self.assertIn('pageDirectionForAnchor', script)
+        self.assertIn('window.setTimeout(() => window.location.assign(url), 220)', script)
+
+    def test_all_public_pages_remove_visual_turn_capsules(self):
+        for route in ('/', '/articles', '/links', '/messages'):
+            with self.subTest(route=route):
+                page = self.client.get(route).get_data(as_text=True)
+                self.assertIn('data-page-prev hidden', page)
+                self.assertIn('data-page-next hidden', page)
+                self.assertNotIn('rw-turn-edge', page)
+
+    def test_page_transition_setting_switches_public_axis(self):
+        response = self.client.post(
+            '/admin',
+            data={
+                'page-transition-axis': 'horizontal',
+                'page-transition-submit': '更新翻页方向',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(get_setting('page_transition_axis'), 'horizontal')
+        page = self.client.get('/articles').get_data(as_text=True)
+        self.assertIn('data-page-axis="horizontal"', page)
+        self.assertIn('data-page-next hidden', page)
+
+    def test_invalid_saved_page_axis_falls_back_to_vertical(self):
+        set_setting('page_transition_axis', 'diagonal')
+        db.session.commit()
+
+        page = self.client.get('/links').get_data(as_text=True)
+
+        self.assertIn('data-page-axis="vertical"', page)
+        self.assertIn('data-page-next hidden', page)
 
     def test_diary_create_and_delete_buttons_complete_the_flow(self):
         response = self.client.post(

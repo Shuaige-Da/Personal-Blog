@@ -19,6 +19,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from backend.admin.auth import apply_security_headers, csrf, login_manager, register_admin_routes
 from backend.admin.blog import register_blog_admin_routes
+from backend.admin.audio import register_audio_cli
 from backend.admin.content import register_admin_feature_routes
 from backend.admin.review import register_admin_review_routes
 from backend.admin.settings import initialize_site_defaults, register_admin_settings_routes
@@ -48,6 +49,13 @@ def create_app(test_config=None):
         __name__,
         template_folder=os.path.join(project_root, 'frontend', 'templates'),
         static_folder=os.path.join(project_root, 'frontend', 'static'),
+    )
+    versioned_assets = ('css/rainwave.css', 'js/rainwave.js')
+    static_asset_version = str(
+        max(
+            os.stat(os.path.join(app.static_folder, *asset.split('/'))).st_mtime_ns
+            for asset in versioned_assets
+        )
     )
 
     # 1. 读取 config.py 里的所有配置项。
@@ -94,6 +102,7 @@ def create_app(test_config=None):
             'csp_nonce': g.get('csp_nonce', ''),
             'turnstile_site_key': app.config.get('TURNSTILE_SITE_KEY', ''),
             'totp_required': bool(app.config.get('ADMIN_TOTP_SECRET')),
+            'static_asset_version': static_asset_version,
         }
 
     # 4. 注册不同业务模块的路由。
@@ -105,6 +114,7 @@ def create_app(test_config=None):
     register_admin_settings_routes(app)
     register_blog_admin_routes(app)
     register_hermes_routes(app)
+    register_audio_cli(app)
 
     limiter.limit('5 per minute; 20 per hour')(app.view_functions['login'])
     limiter.limit('3 per hour')(app.view_functions['messages'])

@@ -321,7 +321,16 @@ INIT_ADMIN_PASSWORD=<至少12位密码>
 
 ## 环境变量
 
-复制 `.env.example` 作为部署平台的配置参考。应用不会自动读取 `.env`，应由进程管理器、容器平台或系统服务注入变量。
+复制 `.env.example` 作为部署平台的配置参考。应用本身不会自动读取 `.env`，生产环境应由进程管理器、容器平台或系统服务注入变量。Windows 本地启动脚本会额外读取不提交 Git 的 `.env.local`。
+
+如果 Hermes API 只监听服务器的 `127.0.0.1:8642`，本地测试时先建立 SSH 隧道，再启动网站：
+
+```powershell
+Copy-Item .env.local.example .env.local
+ssh -N -L 8642:127.0.0.1:8642 <服务器用户>@<服务器地址>
+```
+
+把服务器 `/etc/rainwave/rainwave.env` 中的 `HERMES_API_KEY` 安全写入本地 `.env.local`，不要提交、截图或发送该文件。隧道保持运行时，`start_local.ps1` 会显示 `Hermes API: configured`。
 
 | 变量 | 必需 | 说明 |
 | --- | --- | --- |

@@ -59,6 +59,35 @@ class FileRecord(db.Model):
         return f'<FileRecord {self.filename}>'
 
 
+class AudioPlaybackVariant(db.Model):
+    """Lossless browser playback copy for an uploaded audio original."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    file_record_id = db.Column(
+        db.Integer,
+        db.ForeignKey('file_record.id'),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    filename = db.Column(db.String(180), nullable=False)
+    source_mime_type = db.Column(db.String(120), nullable=False, default='application/octet-stream')
+    mime_type = db.Column(db.String(120), nullable=False, default='audio/wav')
+    codec = db.Column(db.String(40), nullable=False)
+    sample_rate = db.Column(db.Integer, nullable=True)
+    channels = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=utc_now)
+
+    file_record = db.relationship(
+        'FileRecord',
+        backref=db.backref(
+            'audio_variant',
+            uselist=False,
+            cascade='all, delete-orphan',
+        ),
+    )
+
+
 class DiaryEntry(db.Model):
     """Diary entry created by the administrator."""
 
@@ -206,10 +235,49 @@ class HermesMessage(db.Model):
     role = db.Column(db.String(20), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utc_now, index=True)
+    attachments = db.relationship(
+        'HermesAttachment',
+        backref='message',
+        cascade='all, delete-orphan',
+        lazy='select',
+        order_by='HermesAttachment.created_at',
+    )
 
     def __repr__(self):
         """Return a readable debug representation."""
         return f'<HermesMessage {self.role}>'
+
+
+class HermesAttachment(db.Model):
+    """Private file attached to one administrator chat message."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(
+        db.Integer,
+        db.ForeignKey('hermes_conversation.id'),
+        nullable=False,
+        index=True,
+    )
+    message_id = db.Column(
+        db.Integer,
+        db.ForeignKey('hermes_message.id'),
+        nullable=False,
+        index=True,
+    )
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    stored_name = db.Column(db.String(180), nullable=False, unique=True)
+    original_name = db.Column(db.String(255), nullable=False)
+    mime_type = db.Column(db.String(120), nullable=False)
+    size_bytes = db.Column(db.Integer, nullable=False)
+    kind = db.Column(db.String(20), nullable=False)
+    extracted_text_name = db.Column(db.String(180), nullable=True)
+    truncated = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=utc_now, index=True)
+
+    conversation = db.relationship('HermesConversation', foreign_keys=[conversation_id])
+
+    def __repr__(self):
+        return f'<HermesAttachment {self.original_name}>'
 
 
 class HermesChatJob(db.Model):

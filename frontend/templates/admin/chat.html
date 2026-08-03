@@ -64,6 +64,22 @@
         padding: 1.5rem;
     }
 
+    .chat-message-stage {
+        position: relative;
+    }
+
+    .chat-jump-latest {
+        position: absolute;
+        right: 1.25rem;
+        bottom: 1rem;
+        z-index: 2;
+        box-shadow: 0 10px 28px rgba(1, 11, 24, 0.3);
+    }
+
+    .chat-jump-latest[hidden] {
+        display: none;
+    }
+
     .chat-bubble {
         max-width: 85%;
         padding: 1rem 1.25rem;
@@ -89,7 +105,34 @@
     }
 
     .chat-bubble-ai.loading {
-        opacity: 0.6;
+        color: var(--text-soft);
+    }
+
+    .chat-thinking-dots {
+        display: inline-flex;
+        gap: 0.24rem;
+        margin-left: 0.38rem;
+        vertical-align: middle;
+    }
+
+    .chat-thinking-dots span {
+        width: 0.34rem;
+        height: 0.34rem;
+        border-radius: 999px;
+        background: currentColor;
+        animation: chat-thinking-pulse 1.2s infinite ease-in-out;
+    }
+
+    .chat-thinking-dots span:nth-child(2) { animation-delay: 0.16s; }
+    .chat-thinking-dots span:nth-child(3) { animation-delay: 0.32s; }
+
+    @keyframes chat-thinking-pulse {
+        0%, 70%, 100% { opacity: 0.28; transform: translateY(0); }
+        35% { opacity: 1; transform: translateY(-0.18rem); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .chat-thinking-dots span { animation: none; opacity: 0.75; }
     }
 
     .chat-input-area {
@@ -114,6 +157,76 @@
         min-height: 60px;
     }
 
+    .chat-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .chat-attachment-input { display: none; }
+
+    .chat-attachment-list,
+    .chat-message-attachments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 0.7rem;
+    }
+
+    .chat-attachment-chip,
+    .chat-message-attachment {
+        display: inline-flex;
+        max-width: 100%;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.65rem;
+        border: 1px solid rgba(141, 231, 213, 0.2);
+        border-radius: 12px;
+        color: var(--text-soft);
+        background: rgba(141, 231, 213, 0.07);
+        font-size: 0.82rem;
+        text-decoration: none;
+    }
+
+    .chat-attachment-chip span,
+    .chat-message-attachment span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .chat-attachment-remove {
+        border: 0;
+        color: inherit;
+        background: transparent;
+    }
+
+    .chat-message-image {
+        display: block;
+        width: min(220px, 100%);
+        max-height: 180px;
+        border-radius: 12px;
+        object-fit: cover;
+    }
+
+    .chat-drop-active {
+        outline: 2px solid rgba(141, 231, 213, 0.65);
+        outline-offset: 4px;
+    }
+
+    .chat-bubble-ai .codehilite,
+    .chat-bubble-ai pre {
+        overflow-x: auto;
+        padding: 0.85rem;
+        border-radius: 12px;
+        background: rgba(1, 11, 24, 0.7);
+    }
+
+    .chat-bubble-ai p:last-child { margin-bottom: 0; }
+
+    .chat-error-actions { margin-top: 0.65rem; }
+
     @media (max-width: 991.98px) {
         .chat-shell {
             grid-template-columns: 1fr;
@@ -125,27 +238,6 @@
         }
     }
 
-    .typing-indicator {
-        display: inline-flex;
-        gap: 4px;
-        padding: 0.5rem 0;
-    }
-
-    .typing-indicator span {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--text-dim);
-        animation: typing 1.4s infinite;
-    }
-
-    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes typing {
-        0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-        30% { opacity: 1; transform: translateY(-4px); }
-    }
 </style>
 {% endblock %}
 
@@ -180,6 +272,9 @@
             <button type="button" class="btn ghost-btn" id="new-conversation">
                 <i class="bi bi-plus-lg me-1"></i>New chat
             </button>
+            <button type="button" class="btn ghost-btn mt-2" id="delete-conversation" hidden>
+                <i class="bi bi-trash me-1"></i>删除当前会话
+            </button>
         </div>
         <p class="text-uppercase muted-text small mb-2">History</p>
         <div class="conversation-list" id="conversation-list">
@@ -200,19 +295,38 @@
 
     <div class="glass-card mb-4">
         {# Chat messages area. #}
-        <div class="chat-messages" id="chat-messages">
-            <div class="chat-bubble chat-bubble-ai" id="welcome-message">
-                <strong>Hermes Agent</strong><br><br>
-                &#20320;&#22909;&#65281;&#25105;&#26159; Hermes Agent&#65292;&#20320;&#30340; AI &#21161;&#25163;&#12290;&#26377;&#20160;&#20040;&#21487;&#20197;&#24110;&#20320;&#30340;&#21527;&#65311;<br><br>
-                &#20320;&#21487;&#20197;&#38382;&#25105;&#65306;<br>
-                &#8226; &#25216;&#26415;&#38382;&#39064;&#65288;&#32534;&#31243;&#12289;&#26550;&#26500;&#35774;&#35745;&#65289;<br>
-                &#8226; &#20889;&#20316;&#24314;&#35758;&#65288;&#28070;&#33394;&#12289;&#25193;&#20889;&#12289;&#32763;&#35793;&#65289;<br>
-                &#8226; &#20219;&#20309;&#20320;&#24819;&#32842;&#30340;&#35805;&#39064;
+        <div class="chat-message-stage">
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-bubble chat-bubble-ai" id="welcome-message">
+                    <strong>Hermes Agent</strong><br><br>
+                    &#20320;&#22909;&#65281;&#25105;&#26159; Hermes Agent&#65292;&#20320;&#30340; AI &#21161;&#25163;&#12290;&#26377;&#20160;&#20040;&#21487;&#20197;&#24110;&#20320;&#30340;&#21527;&#65311;<br><br>
+                    &#20320;&#21487;&#20197;&#38382;&#25105;&#65306;<br>
+                    &#8226; &#25216;&#26415;&#38382;&#39064;&#65288;&#32534;&#31243;&#12289;&#26550;&#26500;&#35774;&#35745;&#65289;<br>
+                    &#8226; &#20889;&#20316;&#24314;&#35758;&#65288;&#28070;&#33394;&#12289;&#25193;&#20889;&#12289;&#32763;&#35793;&#65289;<br>
+                    &#8226; &#20219;&#20309;&#20320;&#24819;&#32842;&#30340;&#35805;&#39064;
+                </div>
             </div>
+            <button type="button" class="btn ghost-btn btn-sm chat-jump-latest" id="chat-jump-latest" hidden>
+                <i class="bi bi-arrow-down me-1"></i>回到最新消息
+            </button>
         </div>
 
         {# Input area. #}
         <div class="p-4" style="border-top: 1px solid rgba(255, 255, 255, 0.06);">
+            <div class="chat-toolbar">
+                <label class="btn ghost-btn" for="chat-attachments">
+                    <i class="bi bi-paperclip me-1"></i>添加图片或文件
+                </label>
+                <input
+                    class="chat-attachment-input"
+                    id="chat-attachments"
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.docx,.txt,.md,.markdown,.csv,.json,.py,.js,.ts,.html,.css,.xml,.yaml,.yml,.toml,.ini,.sql,.sh,.ps1,.java,.c,.cpp,.cs,.go,.rs,.log"
+                >
+                <span class="small muted-text align-self-center">最多 5 个；也可拖放文件或直接粘贴图片</span>
+            </div>
+            <div class="chat-attachment-list mb-2" id="chat-attachment-list" aria-live="polite"></div>
             <div class="chat-input-area">
                 <textarea
                     class="form-control"
@@ -222,6 +336,9 @@
                 ></textarea>
                 <button type="button" class="btn login-btn chat-send-btn" id="chat-send">
                     <i class="bi bi-send me-1"></i>&#21457;&#36865;
+                </button>
+                <button type="button" class="btn danger-btn chat-send-btn" id="chat-stop" hidden>
+                    <i class="bi bi-stop-fill me-1"></i>停止
                 </button>
             </div>
         </div>
@@ -235,106 +352,164 @@
     const messagesDiv = document.getElementById('chat-messages');
     const inputArea = document.getElementById('chat-input');
     const sendBtn = document.getElementById('chat-send');
+    const stopBtn = document.getElementById('chat-stop');
+    const jumpLatestBtn = document.getElementById('chat-jump-latest');
     const newConversationBtn = document.getElementById('new-conversation');
+    const deleteConversationBtn = document.getElementById('delete-conversation');
     const conversationList = document.getElementById('conversation-list');
+    const attachmentInput = document.getElementById('chat-attachments');
+    const attachmentList = document.getElementById('chat-attachment-list');
+    const inputPanel = inputArea.closest('.p-4');
     const welcomeMessage = document.getElementById('welcome-message')?.cloneNode(true);
-    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value ||
-                      document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
     let currentConversationId = null;
+    let currentJobKey = null;
+    let activeController = null;
+    let pendingFiles = [];
+    let lastUserMessageId = null;
+    let followLatest = true;
 
-    function clearMessages() {
-        messagesDiv.innerHTML = '';
-    }
-
-    function showWelcomeMessage() {
+    const clearMessages = () => { messagesDiv.innerHTML = ''; };
+    const showWelcomeMessage = () => {
+        followLatest = true;
         clearMessages();
-        if (welcomeMessage) {
-            messagesDiv.appendChild(welcomeMessage.cloneNode(true));
-        }
+        if (welcomeMessage) messagesDiv.appendChild(welcomeMessage.cloneNode(true));
+        updateJumpLatestButton();
+    };
+    const setBusy = (busy) => {
+        sendBtn.disabled = busy;
+        stopBtn.hidden = !busy;
+        sendBtn.hidden = busy;
+        messagesDiv.setAttribute('aria-busy', String(busy));
+        inputPanel.classList.toggle('is-generating', busy);
+    };
+    const isNearLatest = () => (
+        messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight <= 72
+    );
+    const updateJumpLatestButton = () => { jumpLatestBtn.hidden = followLatest; };
+    const scrollToLatest = ({force = false} = {}) => {
+        if (force) followLatest = true;
+        if (!followLatest) return;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        updateJumpLatestButton();
+    };
+
+    function renderAttachments(host, attachments = []) {
+        if (!attachments.length) return;
+        const list = document.createElement('div');
+        list.className = 'chat-message-attachments';
+        attachments.forEach((attachment) => {
+            const link = document.createElement('a');
+            link.className = 'chat-message-attachment';
+            link.href = attachment.url;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            if (attachment.kind === 'image') {
+                const image = document.createElement('img');
+                image.className = 'chat-message-image';
+                image.src = attachment.url;
+                image.alt = attachment.name;
+                link.appendChild(image);
+            } else {
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-file-earmark-text';
+                const name = document.createElement('span');
+                name.textContent = attachment.name + (attachment.truncated ? '（内容已截断）' : '');
+                link.append(icon, name);
+            }
+            list.appendChild(link);
+        });
+        host.appendChild(list);
     }
 
-    function addMessage(text, isUser) {
+    function addMessage(message, role = 'assistant', {forceFollow = false} = {}) {
         const bubble = document.createElement('div');
-        bubble.className = `chat-bubble ${isUser ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
-        bubble.textContent = text;
+        bubble.className = `chat-bubble ${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
+        if (message?.id) bubble.dataset.messageId = message.id;
+        if (role === 'assistant' && message?.content_html) {
+            const content = document.createElement('div');
+            content.className = 'chat-markdown';
+            content.innerHTML = message.content_html;
+            bubble.appendChild(content);
+        } else {
+            const content = document.createElement('div');
+            content.className = 'chat-message-text';
+            content.textContent = message?.content ?? String(message || '');
+            bubble.appendChild(content);
+        }
+        renderAttachments(bubble, message?.attachments || []);
         messagesDiv.appendChild(bubble);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        scrollToLatest({force: forceFollow});
         return bubble;
+    }
+
+    function showThinking(bubble) {
+        bubble.classList.add('loading', 'chat-thinking');
+        bubble.setAttribute('aria-label', 'Hermes 正在思考');
+        const content = bubble.querySelector('.chat-message-text');
+        content.textContent = '正在思考';
+        const dots = document.createElement('span');
+        dots.className = 'chat-thinking-dots';
+        dots.setAttribute('aria-hidden', 'true');
+        dots.append(document.createElement('span'), document.createElement('span'), document.createElement('span'));
+        content.appendChild(dots);
+    }
+
+    function addError(message, retryMessageId = null) {
+        const bubble = addMessage({content: `[Error] ${message}`}, 'assistant');
+        if (retryMessageId) {
+            const actions = document.createElement('div');
+            actions.className = 'chat-error-actions';
+            const retry = document.createElement('button');
+            retry.type = 'button';
+            retry.className = 'btn ghost-btn btn-sm';
+            retry.textContent = '重试';
+            retry.addEventListener('click', () => streamTurn({retryMessageId}));
+            actions.appendChild(retry);
+            bubble.appendChild(actions);
+        }
     }
 
     function renderMessages(messages) {
         clearMessages();
-        if (!messages.length) {
-            showWelcomeMessage();
-            return;
-        }
-
-        messages.forEach((message) => {
-            addMessage(message.content || '', message.role === 'user');
-        });
+        if (!messages.length) return showWelcomeMessage();
+        followLatest = true;
+        messages.forEach((message) => addMessage(message, message.role));
+        scrollToLatest({force: true});
     }
 
     function setActiveConversation(conversationId) {
         document.querySelectorAll('.conversation-item').forEach((item) => {
-            item.classList.toggle(
-                'is-active',
-                item.dataset.conversationId === String(conversationId)
-            );
+            item.classList.toggle('is-active', item.dataset.conversationId === String(conversationId));
         });
-    }
-
-    function formatConversationTime(value) {
-        if (!value) return '';
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return '';
-        return date.toLocaleString('zh-CN', {
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-        });
-    }
-
-    function removeEmptyState() {
-        document.getElementById('empty-conversations')?.remove();
-    }
-
-    function makeConversationButton() {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'conversation-item';
-        button.dataset.conversationId = conversation.id;
-        button.addEventListener('click', () => loadConversation(conversation.id));
-        return button;
+        deleteConversationBtn.hidden = !conversationId;
     }
 
     function updateConversationButton(button, conversation) {
         button.dataset.conversationId = conversation.id;
         button.innerHTML = '';
-
         const title = document.createElement('span');
         title.className = 'conversation-title';
         title.textContent = conversation.title || 'New chat';
-
         const time = document.createElement('span');
         time.className = 'small muted-text';
-        time.textContent = formatConversationTime(conversation.updated_at);
-
+        const value = new Date(conversation.updated_at);
+        time.textContent = Number.isNaN(value.getTime()) ? '' : value.toLocaleString('zh-CN', {
+            month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+        });
         button.append(title, time);
     }
 
     function upsertConversation(conversation) {
         if (!conversation?.id) return;
-
-        removeEmptyState();
-        let button = conversationList.querySelector(
-            `.conversation-item[data-conversation-id="${conversation.id}"]`
-        );
+        document.getElementById('empty-conversations')?.remove();
+        let button = conversationList.querySelector(`[data-conversation-id="${conversation.id}"]`);
         if (!button) {
-            button = makeConversationButton();
+            button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'conversation-item';
+            button.addEventListener('click', () => loadConversation(conversation.id));
         }
-
         updateConversationButton(button, conversation);
         conversationList.prepend(button);
         setActiveConversation(conversation.id);
@@ -345,187 +520,232 @@
             const data = await response.clone().json();
             return data.error || data.message || response.statusText;
         } catch (error) {
-            const text = await response.text();
-            return text || response.statusText;
+            return (await response.text()) || response.statusText;
         }
     }
 
     async function loadConversation(conversationId) {
-        if (!conversationId) return;
-
+        if (!conversationId || activeController) return;
         currentConversationId = Number(conversationId);
         setActiveConversation(currentConversationId);
+        followLatest = true;
         clearMessages();
-        addTypingIndicator();
-
+        const loading = addMessage({content: '正在加载会话…'}, 'assistant', {forceFollow: true});
+        loading.classList.add('loading');
         try {
-            const response = await fetch(
-                `/api/hermes/conversations/${currentConversationId}/messages`
-            );
-            removeTypingIndicator();
-
-            if (!response.ok) {
-                const error = await parseFetchError(response);
-                addMessage(`[Error] ${error || 'request failed'}`, false);
-                return;
-            }
-
+            const response = await fetch(`/api/hermes/conversations/${currentConversationId}/messages`);
+            if (!response.ok) throw new Error(await parseFetchError(response));
             const data = await response.json();
             upsertConversation(data.conversation);
             renderMessages(data.messages || []);
         } catch (error) {
-            removeTypingIndicator();
-            addMessage('[Network Error]', false);
+            clearMessages();
+            addError(error.message || '会话加载失败');
         }
     }
 
-    function wait(ms) {
-        return new Promise((resolve) => window.setTimeout(resolve, ms));
-    }
-
-    async function pollChatJob(jobKey) {
-        const maxPolls = 300;
-
-        for (let index = 0; index < maxPolls; index += 1) {
-            await wait(2000);
-
-            const response = await fetch(`/api/hermes/chat/jobs/${jobKey}`);
-            if (!response.ok) {
-                const error = await parseFetchError(response);
-                throw new Error(error || 'request failed');
-            }
-
-            const data = await response.json();
-            if (data.conversation) {
-                upsertConversation(data.conversation);
-            }
-
-            if (data.job?.status === 'succeeded') {
-                removeTypingIndicator();
-                addMessage(data.response || data.message?.content || '', false);
-                return;
-            }
-
-            if (data.job?.status === 'failed') {
-                removeTypingIndicator();
-                addMessage(`[Error] ${data.job.error || 'Hermes request failed'}`, false);
-                return;
-            }
-        }
-
-        throw new Error('Hermes request is still running. Please open this chat later.');
-    }
-
-    function addTypingIndicator() {
-        const bubble = document.createElement('div');
-        bubble.className = 'chat-bubble chat-bubble-ai loading';
-        bubble.id = 'typing-indicator';
-        bubble.innerHTML = `
-            <strong>Hermes Agent</strong><br>
-            <div class="typing-indicator">
-                <span></span><span></span><span></span>
-            </div>
-        `;
-        messagesDiv.appendChild(bubble);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    function removeTypingIndicator() {
-        const indicator = document.getElementById('typing-indicator');
-        if (indicator) indicator.remove();
-    }
-
-    async function sendMessage() {
-        const message = inputArea.value.trim();
-        if (!message) return;
-
-        if (!currentConversationId) {
-            document.querySelectorAll('.conversation-item.is-active').forEach((item) => {
-                item.classList.remove('is-active');
+    function renderPendingFiles() {
+        attachmentList.innerHTML = '';
+        pendingFiles.forEach((file, index) => {
+            const chip = document.createElement('div');
+            chip.className = 'chat-attachment-chip';
+            const icon = document.createElement('i');
+            icon.className = file.type.startsWith('image/') ? 'bi bi-image' : 'bi bi-file-earmark-text';
+            const name = document.createElement('span');
+            name.textContent = file.name;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'chat-attachment-remove';
+            remove.setAttribute('aria-label', `移除 ${file.name}`);
+            remove.innerHTML = '<i class="bi bi-x-lg"></i>';
+            remove.addEventListener('click', () => {
+                pendingFiles.splice(index, 1);
+                renderPendingFiles();
             });
-        }
+            chip.append(icon, name, remove);
+            attachmentList.appendChild(chip);
+        });
+    }
 
+    function addFiles(files) {
+        for (const file of files) {
+            if (pendingFiles.length >= 5) break;
+            const duplicate = pendingFiles.some((item) => (
+                item.name === file.name && item.size === file.size && item.lastModified === file.lastModified
+            ));
+            if (!duplicate) pendingFiles.push(file);
+        }
+        renderPendingFiles();
+    }
+
+    async function consumeEventStream(response, handlers) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (true) {
+            const {value, done} = await reader.read();
+            buffer += decoder.decode(value || new Uint8Array(), {stream: !done});
+            const blocks = buffer.split(/\r?\n\r?\n/);
+            buffer = blocks.pop() || '';
+            for (const block of blocks) {
+                let eventName = 'message';
+                const dataLines = [];
+                block.split(/\r?\n/).forEach((line) => {
+                    if (line.startsWith('event:')) eventName = line.slice(6).trim();
+                    if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+                });
+                if (!dataLines.length) continue;
+                const payload = JSON.parse(dataLines.join('\n'));
+                await handlers(eventName, payload);
+            }
+            if (done) break;
+        }
+    }
+
+    async function streamTurn({retryMessageId = null} = {}) {
+        if (activeController) return;
+        const message = retryMessageId ? '' : inputArea.value.trim();
+        const files = retryMessageId ? [] : [...pendingFiles];
+        if (!retryMessageId && !message && !files.length) return;
+
+        const formData = new FormData();
+        formData.set('message', message);
+        formData.set('client_request_id', crypto.randomUUID());
+        if (currentConversationId) formData.set('conversation_id', currentConversationId);
+        if (retryMessageId) formData.set('retry_message_id', retryMessageId);
+        files.forEach((file) => formData.append('attachments', file, file.name));
+
+        activeController = new AbortController();
+        currentJobKey = null;
+        setBusy(true);
         document.getElementById('welcome-message')?.remove();
-        addMessage(message, true);
-        inputArea.value = '';
-        inputArea.style.height = 'auto';
-
-        sendBtn.disabled = true;
-        inputArea.disabled = true;
-
-        addTypingIndicator();
-
+        if (!retryMessageId) {
+            inputArea.value = '';
+            inputArea.style.height = 'auto';
+            pendingFiles = [];
+            renderPendingFiles();
+        }
+        inputArea.focus();
+        let streamingBubble = null;
+        let streamingText = '';
         try {
-            const response = await fetch('/api/hermes/chat', {
+            const response = await fetch('/api/hermes/chat/stream', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                },
-                body: JSON.stringify({
-                    message,
-                    conversation_id: currentConversationId,
-                }),
+                headers: {'X-CSRFToken': csrfToken},
+                body: formData,
+                signal: activeController.signal,
             });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.conversation) {
-                    currentConversationId = data.conversation.id;
-                    upsertConversation(data.conversation);
+            if (!response.ok) throw new Error(await parseFetchError(response));
+            await consumeEventStream(response, async (eventName, payload) => {
+                if (eventName === 'conversation') {
+                    currentConversationId = payload.conversation.id;
+                    currentJobKey = payload.job?.job_key || null;
+                    upsertConversation(payload.conversation);
+                } else if (eventName === 'user_message') {
+                    lastUserMessageId = payload.id;
+                    if (!retryMessageId) addMessage(payload, 'user', {forceFollow: true});
+                    streamingBubble = addMessage({content: ''}, 'assistant');
+                    showThinking(streamingBubble);
+                } else if (eventName === 'response_delta') {
+                    if (!streamingBubble) streamingBubble = addMessage({content: ''}, 'assistant');
+                    streamingBubble.classList.remove('loading', 'chat-thinking');
+                    streamingBubble.removeAttribute('aria-label');
+                    streamingText += payload.delta || '';
+                    streamingBubble.querySelector('.chat-message-text').textContent = streamingText;
+                    scrollToLatest();
+                } else if (eventName === 'response_complete') {
+                    streamingBubble?.remove();
+                    streamingBubble = addMessage(payload.message, 'assistant');
+                } else if (eventName === 'cancelled') {
+                    streamingBubble?.remove();
+                    addMessage({content: '已停止生成。'}, 'assistant');
+                } else if (eventName === 'error') {
+                    streamingBubble?.remove();
+                    addError(payload.message || '请求失败', lastUserMessageId);
                 }
-                if (data.job?.job_key) {
-                    await pollChatJob(data.job.job_key);
-                } else {
-                    removeTypingIndicator();
-                    addMessage(data.response || '', false);
-                }
-            } else {
-                removeTypingIndicator();
-                const error = await parseFetchError(response);
-                addMessage(`[Error] ${error || 'request failed'}`, false);
-            }
-        } catch (err) {
-            removeTypingIndicator();
-            addMessage(`[Error] ${err.message || 'Network Error'}`, false);
+            });
+        } catch (error) {
+            streamingBubble?.remove();
+            if (error.name !== 'AbortError') addError(error.message || '网络错误', lastUserMessageId);
         } finally {
-            sendBtn.disabled = false;
-            inputArea.disabled = false;
+            activeController = null;
+            currentJobKey = null;
+            setBusy(false);
             inputArea.focus();
         }
     }
 
     newConversationBtn.addEventListener('click', () => {
+        if (activeController) return;
         currentConversationId = null;
+        lastUserMessageId = null;
         setActiveConversation(null);
         showWelcomeMessage();
         inputArea.focus();
     });
 
-    conversationList.querySelectorAll('.conversation-item').forEach((button) => {
-        button.addEventListener('click', () => {
-            loadConversation(button.dataset.conversationId);
+    deleteConversationBtn.addEventListener('click', async () => {
+        if (!currentConversationId || activeController) return;
+        if (!window.confirm('确定删除当前会话及其全部附件吗？')) return;
+        const response = await fetch(`/api/hermes/conversations/${currentConversationId}`, {
+            method: 'DELETE', headers: {'X-CSRFToken': csrfToken},
         });
+        if (!response.ok) return addError(await parseFetchError(response));
+        conversationList.querySelector(`[data-conversation-id="${currentConversationId}"]`)?.remove();
+        currentConversationId = null;
+        setActiveConversation(null);
+        showWelcomeMessage();
     });
 
-    sendBtn.addEventListener('click', sendMessage);
+    stopBtn.addEventListener('click', async () => {
+        if (currentJobKey) {
+            fetch(`/api/hermes/chat/jobs/${currentJobKey}/cancel`, {
+                method: 'POST', headers: {'X-CSRFToken': csrfToken},
+            }).catch(() => {});
+        }
+        activeController?.abort();
+    });
 
-    inputArea.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
+    attachmentInput.addEventListener('change', () => {
+        addFiles(attachmentInput.files || []);
+        attachmentInput.value = '';
+    });
+    inputPanel.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        inputPanel.classList.add('chat-drop-active');
+    });
+    inputPanel.addEventListener('dragleave', () => inputPanel.classList.remove('chat-drop-active'));
+    inputPanel.addEventListener('drop', (event) => {
+        event.preventDefault();
+        inputPanel.classList.remove('chat-drop-active');
+        addFiles(event.dataTransfer?.files || []);
+    });
+    inputArea.addEventListener('paste', (event) => {
+        const images = [...(event.clipboardData?.files || [])].filter((file) => file.type.startsWith('image/'));
+        if (images.length) addFiles(images);
+    });
+    inputArea.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            if (activeController) return;
+            event.preventDefault();
+            streamTurn();
         }
     });
-
     inputArea.addEventListener('input', () => {
         inputArea.style.height = 'auto';
         inputArea.style.height = Math.min(inputArea.scrollHeight, 150) + 'px';
     });
-
+    sendBtn.addEventListener('click', () => streamTurn());
+    messagesDiv.addEventListener('scroll', () => {
+        followLatest = isNearLatest();
+        updateJumpLatestButton();
+    }, {passive: true});
+    jumpLatestBtn.addEventListener('click', () => scrollToLatest({force: true}));
+    conversationList.querySelectorAll('.conversation-item').forEach((button) => {
+        button.addEventListener('click', () => loadConversation(button.dataset.conversationId));
+    });
     const firstConversation = conversationList.querySelector('.conversation-item');
-    if (firstConversation) {
-        loadConversation(firstConversation.dataset.conversationId);
-    }
+    if (firstConversation) loadConversation(firstConversation.dataset.conversationId);
 })();
 </script>
 {% endblock %}

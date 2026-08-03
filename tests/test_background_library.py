@@ -13,6 +13,7 @@ from backend.admin.settings import (
     handle_background_upload_form,
     list_background_library_assets,
     set_setting,
+    update_settings,
 )
 from backend.core.forms import BackgroundForm
 from backend.core.models import SiteSetting, db
@@ -95,6 +96,36 @@ class BackgroundLibraryTests(unittest.TestCase):
             event.remove(db.engine, 'before_cursor_execute', record_statement)
 
         self.assertEqual(first_result, second_result)
+        self.assertEqual(len(statements), 1)
+
+    def test_batch_setting_update_uses_one_lookup(self):
+        set_setting('first', 'old')
+        db.session.commit()
+        statements = []
+
+        def record_statement(
+            connection,
+            cursor,
+            statement,
+            parameters,
+            context,
+            executemany,
+        ):
+            if 'site_setting' in statement and statement.lstrip().upper().startswith('SELECT'):
+                statements.append(statement)
+
+        event.listen(db.engine, 'before_cursor_execute', record_statement)
+        try:
+            with self.app.test_request_context('/admin'):
+                update_settings({'first': 'new', 'second': 'created', 'third': 'created'})
+                db.session.commit()
+        finally:
+            event.remove(db.engine, 'before_cursor_execute', record_statement)
+
+        values = {item.key: item.value for item in SiteSetting.query.all()}
+        self.assertEqual(values['first'], 'new')
+        self.assertEqual(values['second'], 'created')
+        self.assertEqual(values['third'], 'created')
         self.assertEqual(len(statements), 1)
 
     def test_apply_background_library_selection_updates_setting_and_clears_playlist(self):

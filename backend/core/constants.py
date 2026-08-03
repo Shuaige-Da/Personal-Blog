@@ -26,6 +26,10 @@ DEFAULT_CLOCK_SHOW_DATE = '1'
 CLOCK_HOUR_CYCLE_CHOICES = {'12', '24'}
 CLOCK_SHOW_DATE_CHOICES = {'0', '1'}
 
+# 前台四个沉浸式页面的翻页方向。
+DEFAULT_PAGE_TRANSITION_AXIS = 'vertical'
+PAGE_TRANSITION_AXIS_CHOICES = {'vertical', 'horizontal'}
+
 # 上传文件名的最大基础长度，避免文件名过长。
 MAX_UPLOAD_BASENAME_LENGTH = 90
 

@@ -9,6 +9,7 @@ htmlcov/
 .env
 .env.*
 !.env.example
+!.env.local.example
 .local-dev-secret-key
 app.db
 app.db-*

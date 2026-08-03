@@ -85,6 +85,8 @@
                                     src="{{ url_for('static', filename='uploads/' + media_config.folder + '/' + item.filename) }}"
                                     alt="{{ item.original_name }}"
                                     class="media-thumb"
+                                    loading="lazy"
+                                    decoding="async"
                                     style="height: 220px;"
                                 >
                                 <div class="d-flex justify-content-between align-items-start gap-3 mt-3">
@@ -115,11 +117,21 @@
                             </div>
 
                             {% if media_config.file_type == 'music' %}
-                                <audio controls class="w-100" data-rw-audio>
-                                    <source src="{{ url_for('static', filename='uploads/' + media_config.folder + '/' + item.filename) }}">
+                                <audio
+                                    controls
+                                    class="w-100"
+                                    preload="none"
+                                    data-rw-audio
+                                    data-audio-original-available="{{ 'true' if item.audio_source_available else 'false' }}"
+                                    data-audio-fallback-available="{{ 'true' if item.audio_fallback_available else 'false' }}"
+                                >
+                                    <source src="{{ url_for('static', filename='uploads/' + media_config.folder + '/' + item.filename) }}" type="{{ item.audio_variant.source_mime_type if item.audio_variant else 'application/octet-stream' }}" data-audio-original>
+                                    {% if item.audio_variant %}
+                                        <source src="{{ url_for('static', filename='uploads/' + media_config.folder + '/' + item.audio_variant.filename) }}" type="audio/wav" data-audio-fallback>
+                                    {% endif %}
                                 </audio>
                             {% else %}
-                                <video controls class="w-100 rounded-4 rw-video-player" style="max-height: 320px;">
+                                <video controls preload="none" class="w-100 rounded-4 rw-video-player" style="max-height: 320px;">
                                     <source src="{{ url_for('static', filename='uploads/' + media_config.folder + '/' + item.filename) }}">
                                 </video>
                             {% endif %}

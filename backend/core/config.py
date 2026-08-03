@@ -157,3 +157,29 @@ class Config:
     # Hermes Agent 配置。未配置时使用模拟响应，方便本地开发。
     HERMES_API_URL = os.environ.get('HERMES_API_URL', '')
     HERMES_API_KEY = os.environ.get('HERMES_API_KEY', '')
+    FFMPEG_BINARY = os.environ.get('FFMPEG_BINARY', 'ffmpeg')
+    FFPROBE_BINARY = os.environ.get('FFPROBE_BINARY', 'ffprobe')
+    AUDIO_PROCESS_TIMEOUT_SECONDS = int(os.environ.get('AUDIO_PROCESS_TIMEOUT_SECONDS', '300'))
+    HERMES_ATTACHMENT_FOLDER = os.environ.get(
+        'HERMES_ATTACHMENT_FOLDER',
+        os.path.join(str(PROJECT_ROOT), 'instance', 'hermes_attachments'),
+    )
+    HERMES_ATTACHMENT_MAX_COUNT = int(os.environ.get('HERMES_ATTACHMENT_MAX_COUNT', '5'))
+    HERMES_ATTACHMENT_IMAGE_MAX_BYTES = int(
+        os.environ.get('HERMES_ATTACHMENT_IMAGE_MAX_BYTES', str(10 * 1024 * 1024))
+    )
+    HERMES_ATTACHMENT_DOCUMENT_MAX_BYTES = int(
+        os.environ.get('HERMES_ATTACHMENT_DOCUMENT_MAX_BYTES', str(20 * 1024 * 1024))
+    )
+    HERMES_ATTACHMENT_TOTAL_MAX_BYTES = int(
+        os.environ.get('HERMES_ATTACHMENT_TOTAL_MAX_BYTES', str(30 * 1024 * 1024))
+    )
+    HERMES_ATTACHMENT_TEXT_MAX_CHARS = int(
+        os.environ.get('HERMES_ATTACHMENT_TEXT_MAX_CHARS', '100000')
+    )
+    HERMES_ATTACHMENT_TURN_TEXT_MAX_CHARS = int(
+        os.environ.get('HERMES_ATTACHMENT_TURN_TEXT_MAX_CHARS', '200000')
+    )
+    HERMES_EDITOR_CONTEXT_MAX_CHARS = int(
+        os.environ.get('HERMES_EDITOR_CONTEXT_MAX_CHARS', '50000')
+    )

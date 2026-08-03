@@ -10,6 +10,7 @@ This module handles:
 import os
 import re
 import uuid
+from functools import lru_cache
 
 import html2text
 import markdown
@@ -46,18 +47,10 @@ MARKDOWN_ALLOWED_ATTRIBUTES = {
     'td': {'align'},
     'th': {'align'},
 }
+MAX_CACHED_MARKDOWN_CHARS = 20_000
 
 
-def render_markdown_to_html(markdown_text):
-    """Render Markdown text to HTML.
-
-    Extensions:
-    - fenced_code: code blocks
-    - tables: tables
-    - toc: auto heading ids
-    - nl2br: newline to br
-    - codehilite: syntax highlighting
-    """
+def _render_markdown(markdown_text):
     rendered = markdown.markdown(
         markdown_text,
         extensions=MARKDOWN_EXTENSIONS,
@@ -70,6 +63,27 @@ def render_markdown_to_html(markdown_text):
         url_schemes={'http', 'https', 'mailto'},
         link_rel='noopener noreferrer',
     )
+
+
+@lru_cache(maxsize=64)
+def _render_cached_markdown(markdown_text):
+    """Cache repeated chat/history renders without retaining large documents."""
+    return _render_markdown(markdown_text)
+
+
+def render_markdown_to_html(markdown_text):
+    """Render Markdown text to HTML.
+
+    Extensions:
+    - fenced_code: code blocks
+    - tables: tables
+    - toc: auto heading ids
+    - nl2br: newline to br
+    - codehilite: syntax highlighting
+    """
+    if len(markdown_text) <= MAX_CACHED_MARKDOWN_CHARS:
+        return _render_cached_markdown(markdown_text)
+    return _render_markdown(markdown_text)
 
 
 def generate_unique_slug(title, existing_slug=None):
