@@ -50,7 +50,14 @@ def create_app(test_config=None):
         template_folder=os.path.join(project_root, 'frontend', 'templates'),
         static_folder=os.path.join(project_root, 'frontend', 'static'),
     )
-    versioned_assets = ('css/rainwave.css', 'js/rainwave.js')
+    versioned_assets = (
+        'css/rainwave.css',
+        'css/liquid-glass.css',
+        'css/liquid-glass-lab.css',
+        'js/rainwave.js',
+        'js/liquid-glass.js',
+        'js/liquid-glass-lab.js',
+    )
     static_asset_version = str(
         max(
             os.stat(os.path.join(app.static_folder, *asset.split('/'))).st_mtime_ns

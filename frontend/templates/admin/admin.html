@@ -42,6 +42,10 @@
                     <i class="bi bi-robot" aria-hidden="true"></i>
                     <span>AI 助手</span>
                 </a>
+                <a class="rw-quick-action" href="{{ url_for('glass_lab') }}">
+                    <i class="bi bi-droplet-half" aria-hidden="true"></i>
+                    <span>玻璃实验台</span>
+                </a>
             </div>
         </div>
     </div>
@@ -76,6 +80,11 @@
                 <li class="nav-item">
                     <a class="nav-link settings-nav-link" href="#section-page-transition" data-settings-panel="section-page-transition">
                         <i class="bi bi-arrow-down-up me-2"></i>前台翻页方向
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link settings-nav-link" href="#section-ui-theme" data-settings-panel="section-ui-theme">
+                        <i class="bi bi-droplet-half me-2"></i>前台视觉主题
                     </a>
                 </li>
                 <li class="nav-item">
@@ -298,6 +307,29 @@
                 </div>
                 <div class="d-grid">
                     {{ page_transition_form.submit(class="btn ghost-btn") }}
+                </div>
+            </form>
+        </div>
+
+        {# ---- 前台视觉主题 ---- #}
+        <div id="section-ui-theme" class="glass-card p-4 mb-4 settings-panel" hidden>
+            <h5 class="section-title fw-bold mb-1"><i class="bi bi-droplet-half me-2"></i>前台视觉主题</h5>
+            <p class="small muted-text mb-3">RainWave 保留现在的夜色质感；iOS Liquid Glass 会为公开页面启用真实背景折射、动态高光和液体回弹。</p>
+            <form action="" method="post">
+                {{ ui_theme_form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ ui_theme_form.theme.label(class="form-label") }}
+                    {{ ui_theme_form.theme(class="form-select") }}
+                </div>
+                <div class="glass-card-soft p-3 mb-3">
+                    <div class="fw-semibold mb-1">独立且可回退</div>
+                    <div class="small muted-text">主题只影响公开页面，后台始终保留当前样式。可以先进入材质实验台检查效果，再切换全站主题。</div>
+                </div>
+                <div class="d-flex flex-column flex-md-row gap-2">
+                    {{ ui_theme_form.submit(class="btn ghost-btn flex-fill") }}
+                    <a class="btn login-btn flex-fill" href="{{ url_for('glass_lab') }}">
+                        <i class="bi bi-box-arrow-up-right me-2" aria-hidden="true"></i>打开材质实验台
+                    </a>
                 </div>
             </form>
         </div>

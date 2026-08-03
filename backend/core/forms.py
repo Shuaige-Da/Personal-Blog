@@ -60,6 +60,11 @@ PAGE_TRANSITION_AXIS_FIELD_CHOICES = [
     ('horizontal', '横向翻页（左右）'),
 ]
 
+UI_THEME_FIELD_CHOICES = [
+    ('rainwave', 'RainWave 夜色主题'),
+    ('liquid_ios', 'iOS Liquid Glass 主题'),
+]
+
 
 class LoginForm(FlaskForm):
     """管理员登录表单。"""
@@ -149,6 +154,17 @@ class PageTransitionSettingsForm(FlaskForm):
         validators=[DataRequired()],
     )
     submit = SubmitField('更新翻页方向')
+
+
+class UiThemeSettingsForm(FlaskForm):
+    """Select the visual theme used by public-facing pages."""
+
+    theme = SelectField(
+        '前台视觉主题',
+        choices=UI_THEME_FIELD_CHOICES,
+        validators=[DataRequired()],
+    )
+    submit = SubmitField('应用前台主题')
 
 
 class HomepageTitleForm(FlaskForm):

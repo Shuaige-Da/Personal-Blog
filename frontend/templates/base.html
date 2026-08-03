@@ -1,3 +1,6 @@
+{% set public_endpoints = ['index', 'articles', 'links', 'messages'] %}
+{% set public_visual_endpoint = current_endpoint in public_endpoints or current_endpoint == 'view_blog_post' %}
+{% set effective_ui_theme = 'liquid_ios' if force_liquid_theme else (ui_theme.key if public_visual_endpoint and ui_theme else 'rainwave') %}
 <!doctype html>
 <html lang="zh-CN">
 <head>
@@ -10,6 +13,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/rainwave.css', v=static_asset_version) }}">
+    {% if effective_ui_theme == 'liquid_ios' %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css', v=static_asset_version) }}">
+        {% if force_liquid_theme %}
+            <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass-lab.css', v=static_asset_version) }}">
+        {% endif %}
+    {% endif %}
     <script nonce="{{ csp_nonce }}">
         try {
             document.documentElement.dataset.pageDirection =
@@ -23,7 +32,6 @@
     </script>
     {% block extra_head %}{% endblock %}
 </head>
-{% set public_endpoints = ['index', 'articles', 'links', 'messages'] %}
 {% set nav_items = [
     ('index', '首页', '01'),
     ('articles', '文章', '02'),
@@ -44,6 +52,7 @@
     data-endpoint="{{ current_endpoint or '' }}"
     data-page-axis="{{ page_transition.axis if page_transition else 'vertical' }}"
     data-page-index="{{ nav_state.active }}"
+    data-ui-theme="{{ effective_ui_theme }}"
 >
     <a class="rw-skip-link" href="#main-content">跳到主要内容</a>
 
@@ -76,9 +85,12 @@
     </div>
     <div class="rw-veil" aria-hidden="true"></div>
     <div class="rw-light" aria-hidden="true"></div>
+    {% if effective_ui_theme == 'liquid_ios' %}
+        <canvas class="lg-refraction-canvas" data-liquid-refraction-canvas aria-hidden="true"></canvas>
+    {% endif %}
 
     <div class="rw-app">
-        <header class="rw-topbar {% if is_admin_page %}rw-admin-topbar{% endif %}">
+        <header class="rw-topbar {% if is_admin_page %}rw-admin-topbar{% endif %}{% if effective_ui_theme == 'liquid_ios' %} lg-glass lg-glass--navbar{% endif %}" {% if effective_ui_theme == 'liquid_ios' %}data-liquid-glass data-glass-shape="pill" data-glass-depth="0.72"{% endif %}>
             <a class="rw-brand" href="{{ url_for('index') }}" data-page-target-index="0" aria-label="RainWave 首页">RAINWAVE</a>
 
             <nav class="rw-desktop-nav" aria-label="主要导航">
@@ -153,9 +165,9 @@
                         </ul>
                     </div>
                 {% elif current_user.is_authenticated %}
-                    <a class="rw-login-button" href="{{ url_for('blog') }}">后台</a>
+                    <a class="rw-login-button{% if effective_ui_theme == 'liquid_ios' %} lg-glass lg-glass--control{% endif %}" {% if effective_ui_theme == 'liquid_ios' %}data-liquid-glass data-glass-shape="pill" data-glass-depth="0.62"{% endif %} href="{{ url_for('blog') }}">后台</a>
                 {% else %}
-                    <a class="rw-login-button" href="{{ url_for('login') }}">登录</a>
+                    <a class="rw-login-button{% if effective_ui_theme == 'liquid_ios' %} lg-glass lg-glass--control{% endif %}" {% if effective_ui_theme == 'liquid_ios' %}data-liquid-glass data-glass-shape="pill" data-glass-depth="0.62"{% endif %} href="{{ url_for('login') }}">登录</a>
                 {% endif %}
             </div>
         </header>
@@ -197,7 +209,7 @@
             <a href="{{ url_for(previous_item[0]) }}" data-page-prev hidden aria-hidden="true" tabindex="-1"></a>
             <a href="{{ url_for(next_item[0]) }}" data-page-next hidden aria-hidden="true" tabindex="-1"></a>
 
-            <nav class="rw-mobile-nav" aria-label="移动端主要导航">
+            <nav class="rw-mobile-nav{% if effective_ui_theme == 'liquid_ios' %} lg-glass lg-glass--navbar{% endif %}" {% if effective_ui_theme == 'liquid_ios' %}data-liquid-glass data-glass-shape="pill" data-glass-depth="0.82"{% endif %} aria-label="移动端主要导航">
                 {% for endpoint, label, number in nav_items %}
                     <a
                         href="{{ url_for(endpoint) }}"
@@ -211,6 +223,12 @@
 
     <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/rainwave.js', v=static_asset_version) }}"></script>
+    {% if effective_ui_theme == 'liquid_ios' %}
+        <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/liquid-glass.js', v=static_asset_version) }}"></script>
+        {% if force_liquid_theme %}
+            <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/liquid-glass-lab.js', v=static_asset_version) }}"></script>
+        {% endif %}
+    {% endif %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

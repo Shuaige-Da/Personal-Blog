@@ -30,6 +30,11 @@ CLOCK_SHOW_DATE_CHOICES = {'0', '1'}
 DEFAULT_PAGE_TRANSITION_AXIS = 'vertical'
 PAGE_TRANSITION_AXIS_CHOICES = {'vertical', 'horizontal'}
 
+# Public visual theme. The administrator surface intentionally keeps the
+# original RainWave theme so a heavy visual effect can always be disabled.
+DEFAULT_UI_THEME = 'rainwave'
+UI_THEME_CHOICES = {'rainwave', 'liquid_ios'}
+
 # 上传文件名的最大基础长度，避免文件名过长。
 MAX_UPLOAD_BASENAME_LENGTH = 90
 

@@ -61,14 +61,14 @@ Import-LocalEnvironmentFile -Path $localEnvFile
 $env:LOCAL_DEV = "1"
 $env:FLASK_DEBUG = "true"
 $env:FLASK_RUN_HOST = "127.0.0.1"
-$env:FLASK_RUN_PORT = "5000"
+$env:FLASK_RUN_PORT = "5001"
 $env:FLASK_AUTO_RELOAD = "true"
 $env:PYTHONPATH = $projectRoot
 
 Write-Host "Local development mode is enabled." -ForegroundColor Cyan
 Write-Host "Project root: $projectRoot"
 Write-Host "Python: $pythonExe"
-Write-Host "Open: http://127.0.0.1:5000" -ForegroundColor Green
+Write-Host "Open: http://127.0.0.1:5001" -ForegroundColor Green
 if ($env:HERMES_API_URL) {
     Write-Host "Hermes API: configured" -ForegroundColor Green
 } else {

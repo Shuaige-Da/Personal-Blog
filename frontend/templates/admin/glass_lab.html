@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="lg-lab" data-glass-lab aria-labelledby="glass-lab-title">
+    <img
+        class="lg-lab-source"
+        data-liquid-refraction-source
+        src="{{ url_for('static', filename='assets/liquid-glass/mountain-lake.png') }}"
+        alt=""
+        aria-hidden="true"
+    >
+
+    <header class="lg-lab-heading lg-glass" data-liquid-glass data-glass-shape="pill" data-glass-depth="0.58">
+        <div>
+            <p>RainWave material system</p>
+            <h1 id="glass-lab-title">Liquid Glass 实验台</h1>
+        </div>
+        <div class="lg-lab-heading-actions">
+            <a class="lg-icon-link" href="{{ url_for('admin') }}" aria-label="返回设置中心">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </a>
+            <button class="lg-icon-link" type="button" data-lab-settings-toggle aria-expanded="false" aria-controls="liquid-lab-settings" aria-label="打开材质调节">
+                <i class="bi bi-sliders" aria-hidden="true"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="lg-lab-stage">
+        <div class="lg-lab-top-row">
+            <div class="lg-select" data-liquid-select>
+                <button
+                    class="lg-select-trigger lg-glass"
+                    type="button"
+                    data-liquid-glass
+                    data-glass-shape="pill"
+                    data-glass-depth="0.92"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-controls="liquid-palette-options"
+                >
+                    <span data-liquid-select-label>Glassy Blue</span>
+                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="lg-select-menu lg-glass" id="liquid-palette-options" data-liquid-glass data-glass-shape="menu" data-glass-depth="0.84" role="listbox" hidden>
+                    {% for value, label in [('blue', 'Glassy Blue'), ('purple', 'Deep Purple'), ('clear', 'Crystal Clear'), ('gold', 'Golden Hour')] %}
+                        <button class="lg-select-option{% if loop.first %} is-selected{% endif %}" type="button" role="option" data-value="{{ value }}" aria-selected="{{ 'true' if loop.first else 'false' }}">
+                            <span>{{ label }}</span>
+                            <i class="bi bi-check2" aria-hidden="true"></i>
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button class="lg-switch lg-glass" type="button" role="switch" aria-checked="true" data-liquid-switch data-liquid-glass data-glass-shape="pill" data-glass-depth="0.88">
+                <span class="lg-switch-fluid" aria-hidden="true"></span>
+                <span class="lg-switch-thumb lg-glass" data-liquid-glass data-glass-shape="circle" data-glass-depth="0.74" aria-hidden="true"></span>
+                <span class="visually-hidden">动态光学效果</span>
+            </button>
+        </div>
+
+        <div class="lg-lab-actions-row">
+            <div class="lg-action-capsule lg-glass" data-liquid-glass data-glass-shape="pill" data-glass-depth="1">
+                <button type="button" data-liquid-action="heart" aria-label="喜欢">
+                    <i class="bi bi-heart-fill" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-liquid-action="star" aria-label="收藏">
+                    <i class="bi bi-star-fill" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-liquid-action="share" aria-label="分享演示">
+                    <i class="bi bi-reply-fill" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <button class="lg-play lg-glass" type="button" data-liquid-play data-liquid-glass data-glass-shape="circle" data-glass-depth="1" aria-label="播放折射波动画">
+                <i class="bi bi-play-fill" aria-hidden="true"></i>
+                <span class="lg-play-wave" aria-hidden="true"></span>
+            </button>
+        </div>
+
+        <div class="lg-lens-demo lg-glass" data-liquid-glass data-glass-shape="panel" data-glass-depth="0.42">
+            <canvas class="lg-lens-source-canvas" data-liquid-lens-source aria-label="用于观察真实放大的终端文字场景"></canvas>
+            <div class="lg-lens lg-glass" data-liquid-lens data-liquid-glass data-glass-shape="lens" data-glass-depth="1.08" tabindex="0" role="application" aria-label="可拖动的液态玻璃放大镜">
+                <canvas data-liquid-lens-output aria-hidden="true"></canvas>
+            </div>
+        </div>
+
+        <nav class="lg-demo-navbar lg-glass" data-liquid-glass data-glass-shape="pill" data-glass-depth="0.94" aria-label="液态玻璃导航演示">
+            {% for icon, label in [('chat-dots', 'Chats'), ('people-fill', 'Contacts'), ('compass', 'Discover'), ('person-fill', 'Me')] %}
+                <button type="button" class="{% if loop.last %}is-active{% endif %}" data-liquid-nav-item>
+                    <i class="bi bi-{{ icon }}" aria-hidden="true"></i>
+                    <span>{{ label }}</span>
+                </button>
+            {% endfor %}
+            <span class="lg-demo-navbar-indicator" data-liquid-nav-indicator aria-hidden="true"></span>
+        </nav>
+    </div>
+
+    <aside class="lg-lab-settings lg-glass" id="liquid-lab-settings" data-liquid-glass data-glass-shape="panel" data-glass-depth="0.7" data-lab-settings hidden>
+        <div class="lg-lab-settings-title">
+            <div>
+                <p>Live optics</p>
+                <h2>材质参数</h2>
+            </div>
+            <button type="button" data-lab-settings-close aria-label="关闭材质调节"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        </div>
+        <div class="lg-lab-segmented" role="group" aria-label="观察背景">
+            <button class="is-active" type="button" data-lab-scene="dark">深色场景</button>
+            <button type="button" data-lab-scene="light">浅色场景</button>
+        </div>
+        <label>
+            <span>折射强度 <output data-lab-output="refraction">72</output></span>
+            <input type="range" min="20" max="100" value="72" data-lab-control="refraction">
+        </label>
+        <label>
+            <span>背景模糊 <output data-lab-output="blur">18</output></span>
+            <input type="range" min="4" max="32" value="18" data-lab-control="blur">
+        </label>
+        <label>
+            <span>玻璃透明度 <output data-lab-output="opacity">12</output></span>
+            <input type="range" min="4" max="24" value="12" data-lab-control="opacity">
+        </label>
+        <div class="lg-lab-quality">
+            <span>渲染档位</span>
+            <strong data-liquid-quality>检测中</strong>
+        </div>
+    </aside>
+</section>
+{% endblock %}

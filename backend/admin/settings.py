@@ -48,10 +48,12 @@ from backend.core.constants import (
     DEFAULT_HOMEPAGE_TITLE_COLOR,
     DEFAULT_HOMEPAGE_TITLE_FONT,
     DEFAULT_PAGE_TRANSITION_AXIS,
+    DEFAULT_UI_THEME,
     HOMEPAGE_FONT_FAMILIES,
     LEGACY_DEFAULT_BACKGROUND_ASSET,
     MAX_UPLOAD_BASENAME_LENGTH,
     PAGE_TRANSITION_AXIS_CHOICES,
+    UI_THEME_CHOICES,
 )
 from backend.core.forms import (
     BackgroundForm,
@@ -60,6 +62,7 @@ from backend.core.forms import (
     HomepageDescriptionForm,
     HomepageTitleForm,
     PageTransitionSettingsForm,
+    UiThemeSettingsForm,
 )
 from backend.core.models import Message, SiteSetting, User, db
 
@@ -97,6 +100,9 @@ HOMEPAGE_HERO_SETTING_DEFAULTS = {
 }
 PAGE_TRANSITION_SETTING_DEFAULTS = {
     'page_transition_axis': DEFAULT_PAGE_TRANSITION_AXIS,
+}
+UI_THEME_SETTING_DEFAULTS = {
+    'ui_theme': DEFAULT_UI_THEME,
 }
 
 
@@ -538,6 +544,15 @@ def get_page_transition_settings():
     return {'axis': axis}
 
 
+def get_ui_theme_settings():
+    """Return the validated theme used by public pages."""
+    values = get_settings(UI_THEME_SETTING_DEFAULTS)
+    theme = values['ui_theme']
+    if theme not in UI_THEME_CHOICES:
+        theme = DEFAULT_UI_THEME
+    return {'key': theme, 'is_liquid': theme == 'liquid_ios'}
+
+
 def get_background_asset(setting_key):
     """Build the background asset payload consumed by templates."""
     get_settings(build_background_setting_defaults(setting_key))
@@ -597,6 +612,7 @@ def render_with_background(template_name, background_setting_key, **context):
     render_defaults = {
         **build_background_setting_defaults(background_setting_key),
         **PAGE_TRANSITION_SETTING_DEFAULTS,
+        **UI_THEME_SETTING_DEFAULTS,
     }
     show_clock = request.endpoint in {'index', 'blog'}
     if show_clock:
@@ -611,6 +627,7 @@ def render_with_background(template_name, background_setting_key, **context):
         clock_settings=get_clock_settings() if show_clock else None,
         current_endpoint=request.endpoint,
         page_transition=get_page_transition_settings(),
+        ui_theme=get_ui_theme_settings(),
         **context,
     )
 
@@ -720,6 +737,7 @@ def build_default_settings():
         **CLOCK_SETTING_DEFAULTS,
         **HOMEPAGE_HERO_SETTING_DEFAULTS,
         **PAGE_TRANSITION_SETTING_DEFAULTS,
+        **UI_THEME_SETTING_DEFAULTS,
     }
     for setting_key in BACKGROUND_SETTING_KEYS:
         settings.update(build_background_setting_defaults(setting_key))
@@ -773,6 +791,7 @@ def validate_choice(value, valid_choices, flash_message):
 def populate_admin_forms(
     clock_settings_form,
     page_transition_form,
+    ui_theme_form,
     homepage_title_form,
     homepage_description_form,
 ):
@@ -781,10 +800,12 @@ def populate_admin_forms(
     current_clock_settings = get_clock_settings()
     homepage_hero_settings = get_homepage_hero_settings()
     page_transition_settings = get_page_transition_settings()
+    ui_theme_settings = get_ui_theme_settings()
     clock_settings_form.style.data = current_clock_settings['style']
     clock_settings_form.hour_cycle.data = current_clock_settings['hour_cycle']
     clock_settings_form.show_date.data = '1' if current_clock_settings['show_date'] else '0'
     page_transition_form.axis.data = page_transition_settings['axis']
+    ui_theme_form.theme.data = ui_theme_settings['key']
     homepage_title_form.title.data = homepage_hero_settings['title']
     homepage_title_form.title_font.data = homepage_hero_settings['title_font']
     homepage_title_form.title_color.data = homepage_hero_settings['title_color']
@@ -903,6 +924,22 @@ def handle_page_transition_form(page_transition_form):
     set_setting('page_transition_axis', selected_axis)
     db.session.commit()
     flash('前台翻页方向已更新。')
+    return redirect(url_for('admin'))
+
+
+def handle_ui_theme_form(ui_theme_form):
+    """Validate and save the public visual theme."""
+    if not ui_theme_form.validate():
+        flash('前台主题设置提交失败，请重新选择。')
+        return redirect(url_for('admin'))
+
+    selected_theme = ui_theme_form.theme.data
+    if not validate_choice(selected_theme, UI_THEME_CHOICES, '无效的前台主题。'):
+        return redirect(url_for('admin'))
+
+    set_setting('ui_theme', selected_theme)
+    db.session.commit()
+    flash('前台视觉主题已更新。')
     return redirect(url_for('admin'))
 
 
@@ -1042,6 +1079,7 @@ def register_admin_settings_routes(app):
         background_playlist_form = BackgroundPlaylistForm(prefix='background-playlist')
         clock_settings_form = ClockSettingsForm(prefix='site-clock')
         page_transition_form = PageTransitionSettingsForm(prefix='page-transition')
+        ui_theme_form = UiThemeSettingsForm(prefix='ui-theme')
         homepage_title_form = HomepageTitleForm(prefix='homepage-title')
         homepage_description_form = HomepageDescriptionForm(prefix='homepage-description')
 
@@ -1050,6 +1088,7 @@ def register_admin_settings_routes(app):
             populate_admin_forms(
                 clock_settings_form,
                 page_transition_form,
+                ui_theme_form,
                 homepage_title_form,
                 homepage_description_form,
             )
@@ -1060,6 +1099,8 @@ def register_admin_settings_routes(app):
             return handle_clock_settings_form(clock_settings_form)
         if is_submitted(page_transition_form):
             return handle_page_transition_form(page_transition_form)
+        if is_submitted(ui_theme_form):
+            return handle_ui_theme_form(ui_theme_form)
         if is_submitted(homepage_title_form):
             return handle_homepage_title_form(homepage_title_form)
         if is_submitted(homepage_description_form):
@@ -1077,10 +1118,23 @@ def register_admin_settings_routes(app):
             background_playlist_form=background_playlist_form,
             clock_settings_form=clock_settings_form,
             page_transition_form=page_transition_form,
+            ui_theme_form=ui_theme_form,
             homepage_title_form=homepage_title_form,
             homepage_description_form=homepage_description_form,
             messages=get_ordered_entries(Message, Message.created_at),
             home_background_asset=get_background_asset('home_background'),
             blog_background_asset=get_background_asset('blog_background'),
             background_library_assets=list_background_library_assets(),
+        )
+
+    @app.route('/admin/glass-lab')
+    @login_required
+    @admin_required
+    def glass_lab():
+        """Render the administrator-only Liquid Glass material laboratory."""
+        return render_with_background(
+            'admin/glass_lab.html',
+            'home_background',
+            title='Liquid Glass 材质实验台',
+            force_liquid_theme=True,
         )

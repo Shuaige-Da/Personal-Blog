@@ -51,7 +51,7 @@ foreach ($process in $launcherProcesses) {
 }
 
 $listenerPids = netstat -ano |
-    Select-String "127\.0\.0\.1:5000.*LISTENING|0\.0\.0\.0:5000.*LISTENING|\[::\]:5000.*LISTENING" |
+    Select-String "127\.0\.0\.1:5001.*LISTENING|0\.0\.0\.0:5001.*LISTENING|\[::\]:5001.*LISTENING" |
     ForEach-Object {
         if ($_.Line -match "\s+(\d+)\s*$") {
             [int]$matches[1]
